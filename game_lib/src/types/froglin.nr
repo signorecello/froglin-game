@@ -1,4 +1,4 @@
-use crate::traits::{serialize::Serialize,froglin_type::FroglinType};
+use crate::traits::{serialize::Serialize, froglin_type::FroglinType};
 use crate::globals::{FROGLIN_SIZE, FROGLIN_MAX_AWAKE_AT, FROGLIN_MAX_HABITATS};
 use crate::zones_types::zone_type::Zone;
 use dep::std::println;
@@ -8,10 +8,10 @@ use crate::froglin_types::desert_froglin;
 struct Froglin {
     type_id: Field,
 	id: Field, // unique ID of the froglin
-    stealth: Field,
-    attack: Field,
-    defense: Field,
-	health: Field,
+    stealth: u32,
+    attack: u32,
+    defense: u32,
+	health: u32,
     level: Field,
 	awake_at: [Field; FROGLIN_MAX_AWAKE_AT], // this can be whatever
 	habitats: [Zone; FROGLIN_MAX_HABITATS], // also can be any number
@@ -19,7 +19,7 @@ struct Froglin {
 
 impl Serialize<FROGLIN_SIZE> for Froglin {
     fn serialize(self) -> [Field; FROGLIN_SIZE] {
-        [self.type_id, self.id, self.stealth, self.attack, self.defense, self.health, self.level]
+        [self.type_id, self.id, self.stealth as Field, self.attack as Field, self.defense as Field, self.health as Field, self.level]
     }
 }
 
@@ -53,23 +53,22 @@ impl FroglinType for Froglin {
 }
 
 impl Froglin {
-	pub fn level_up(&mut self) -> Froglin {
-		let prev = *self;
-		assert(self.id != 0, "Froglin does not exist!");
+    pub fn level_up(&mut self) -> Froglin {
+        assert(self.id != 0, "Froglin does not exist!");
 
-		self.level += 1;
+        self.level += 1;
         self.stealth += 1;
         self.attack += 1;
         self.defense += 1;
         self.health += 100;
 
         *self
-	}
+    }
 }
 
 #[test]
 fn test_level_up() {
-	let mut desert_froglin = desert_froglin::new(0x01); // unique id for the froglin
+    let mut desert_froglin = desert_froglin::new(0x01); // unique id for the froglin
     let prev = desert_froglin;
     desert_froglin.level_up();
     assert(prev.level != desert_froglin.level, "Level did not increase!");

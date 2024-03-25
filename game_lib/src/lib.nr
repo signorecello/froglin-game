@@ -1,6 +1,6 @@
-
 mod types;
 mod traits;
+mod utils;
 mod globals;
 
 mod froglin_types;

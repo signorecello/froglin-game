@@ -4,9 +4,13 @@ use crate::types::froglin::Froglin;
 mod desert_froglin;
 mod tree_froglin;
 
-fn get_froglin_type_by_id(id: Field) -> Froglin {
-    if id == 1 { desert_froglin::new(id) }
-    else if id == 2 { tree_froglin::new(id) }
-    else { assert(false, "Unknown froglin type"); Froglin::default() }
-    
+pub fn get_froglin_type_by_id(unique_id: Field, type_id: Field) -> Froglin {
+    if type_id == 1 {
+        desert_froglin::new(unique_id)
+    } else if type_id == 2 {
+        tree_froglin::new(unique_id)
+    } else {
+        assert(false, "Unknown froglin type");
+        Froglin::default()
+    }
 }
