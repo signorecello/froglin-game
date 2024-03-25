@@ -1,0 +1,183 @@
+level_pub = 1
+mp_boost = 10
+old_identity = "0x1512198acfc33f14681e9ff22a4686ddb58f979b0e2d5d07a16193b7c8c336ab"
+secret = "0x123"
+
+[player]
+level = 1
+mana_power = 10
+stash_root = "0x01"
+
+[[player.froglins]]
+health = 10
+id = 1
+
+[player.froglins.froglin_type]
+attack = 1
+awake_at = [0, 1, 2, 3]
+defense = 1
+stealth = 1
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x01", "0x02"]
+id = "1"
+side = "10"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x02", "0x03"]
+id = "2"
+side = "20"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x03", "0x04"]
+id = "3"
+side = "30"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x04", "0x05"]
+id = "4"
+side = "40"
+
+
+[[player.froglins]]
+health = 10
+id = 1
+
+[player.froglins.froglin_type]
+attack = 1
+awake_at = [0, 1, 2, 3]
+defense = 1
+stealth = 1
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x01", "0x02"]
+id = "1"
+side = "10"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x02", "0x03"]
+id = "2"
+side = "20"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x03", "0x04"]
+id = "3"
+side = "30"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x04", "0x05"]
+id = "4"
+side = "40"
+
+
+[[player.froglins]]
+health = 10
+id = 1
+
+[player.froglins.froglin_type]
+attack = 1
+awake_at = [0, 1, 2, 3]
+defense = 1
+stealth = 1
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x01", "0x02"]
+id = "1"
+side = "10"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x02", "0x03"]
+id = "2"
+side = "20"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x03", "0x04"]
+id = "3"
+side = "30"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x04", "0x05"]
+id = "4"
+side = "40"
+
+
+[[player.froglins]]
+health = 10
+id = 1
+
+[player.froglins.froglin_type]
+attack = 1
+awake_at = [0, 1, 2, 3]
+defense = 1
+stealth = 1
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x01", "0x02"]
+id = "1"
+side = "10"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x02", "0x03"]
+id = "2"
+side = "20"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x03", "0x04"]
+id = "3"
+side = "30"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x04", "0x05"]
+id = "4"
+side = "40"
+
+
+[[player.froglins]]
+health = 10
+id = 1
+
+[player.froglins.froglin_type]
+attack = 1
+awake_at = [0, 1, 2, 3]
+defense = 1
+stealth = 1
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x01", "0x02"]
+id = "1"
+side = "10"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x02", "0x03"]
+id = "2"
+side = "20"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x03", "0x04"]
+id = "3"
+side = "30"
+
+[[player.froglins.froglin_type.habitats]]
+coords = ["0x04", "0x05"]
+id = "4"
+side = "40"
+
+[[player.inventory]]
+id = "1"
+quantity = "1"
+
+[[player.inventory]]
+id = "2"
+quantity = "2"
+
+[[player.inventory]]
+id = "3"
+quantity = "3"
+
+[[player.inventory]]
+id = "4"
+quantity = "4"
+
+[[player.inventory]]
+id = "5"
+quantity = "5"
