@@ -1,4 +1,4 @@
-use crate::traits::serialize::Serialize;
+use crate::traits::{serialize::Serialize,froglin_type::FroglinType};
 use crate::globals::{FROGLIN_SIZE, FROGLIN_MAX_AWAKE_AT, FROGLIN_MAX_HABITATS};
 use crate::zones_types::zone_type::Zone;
 use dep::std::println;
@@ -43,6 +43,12 @@ impl Eq for Froglin {
     fn eq(self, other: Self) -> bool {
         (self.id == other.id) &
         (self.type_id == other.type_id)
+    }
+}
+
+impl FroglinType for Froglin {
+    fn get_type(&mut self) -> Field {
+        self.type_id
     }
 }
 

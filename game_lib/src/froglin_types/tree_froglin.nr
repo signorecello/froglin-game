@@ -1,6 +1,5 @@
 use crate::types::froglin::Froglin;
-use crate::zones_types::forest;
-use crate::zones_types::zone_type::Zone;
+use crate::zones_types::{zone_type::Zone, forest};
 
 pub fn new(id: Field) -> Froglin {
     Froglin {

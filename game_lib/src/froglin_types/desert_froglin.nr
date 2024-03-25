@@ -1,6 +1,5 @@
 use crate::types::froglin::Froglin;
-use crate::zones_types::desert;
-use crate::zones_types::zone_type::Zone;
+use crate::zones_types::{zone_type::Zone, desert};
 
 pub fn new(id: Field) -> Froglin {
     Froglin {
@@ -25,3 +24,4 @@ pub fn get_habitats() -> [Zone; 4] {
     // lives in prairies only
     [desert::new(), Zone::default(), Zone::default(), Zone::default()]
 }
+

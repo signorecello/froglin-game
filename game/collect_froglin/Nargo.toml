@@ -1,0 +1,8 @@
+[package]
+name = "collect_froglin"
+type = "bin"
+authors = [""]
+compiler_version = ">=0.25.0"
+
+[dependencies]
+game_lib = { path = "../../game_lib" }
