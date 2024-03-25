@@ -22,9 +22,14 @@ impl Default for Item {
     }
 }
 
+impl Eq for Item {
+    fn eq(self, other: Item) -> bool {
+        (self.id == other.id) & (self.quantity == other.quantity)
+    }
+}
+
 impl Item {
     pub fn assert_unchanged(self, other: Item) {
-        println(f"Asserting Item unchanged: {self}");
         assert(self.id == other.id);
         assert(self.quantity == other.quantity);
     }

@@ -1,7 +1,0 @@
-[package]
-name = "froglin_utils_lib"
-type = "lib"
-authors = [""]
-compiler_version = ">=0.25.0"
-
-[dependencies]

@@ -1,6 +1,6 @@
 level_pub = 1
 mp_boost = 10
-old_identity = "0x1512198acfc33f14681e9ff22a4686ddb58f979b0e2d5d07a16193b7c8c336ab"
+old_identity = "0x18c1bb0397824ffa94a782adc053ad64e44fbaedc5648bc8a80862d88a31937f"
 secret = "0x123"
 
 [player]

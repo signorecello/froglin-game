@@ -1,8 +1,7 @@
 [package]
-name = "froglin_lib"
+name = "froglin_game_lib"
 type = "lib"
 authors = [""]
 compiler_version = ">=0.25.0"
 
 [dependencies]
-froglin = { path = "../lib" }
