@@ -13,7 +13,7 @@ struct Froglin {
     defense: u32,
 	health: u32,
     level: Field,
-	awake_at: [Field; FROGLIN_MAX_AWAKE_AT], // this can be whatever
+	awake_at: [u32; FROGLIN_MAX_AWAKE_AT], // this can be whatever
 	habitats: [Zone; FROGLIN_MAX_HABITATS], // also can be any number
 }
 

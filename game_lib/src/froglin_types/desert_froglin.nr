@@ -11,11 +11,11 @@ pub fn new(id: Field) -> Froglin {
         health: 200, // still pretty tough to kill
         level: 1,
         awake_at: get_awake_times(), // Make sure this fits the array size
-        habitats: get_habitats(), // Make sure this fits the array size
+        habitats: get_habitats() // Make sure this fits the array size
     }
 }
 
-pub fn get_awake_times() -> [Field; 4] {
+pub fn get_awake_times() -> [u32; 4] {
     // is awake at 10am, 13am, 16am, 19am, 22am
     [60, 78, 96, 114]
 }
