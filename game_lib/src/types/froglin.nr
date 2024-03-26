@@ -57,7 +57,6 @@ impl Froglin {
         assert(self.id != 0, "Froglin does not exist!");
 
         self.level += 1;
-        self.stealth += 1;
         self.attack += 1;
         self.defense += 1;
         self.health += 100;
@@ -72,7 +71,6 @@ fn test_level_up() {
     let prev = desert_froglin;
     desert_froglin.level_up();
     assert(prev.level != desert_froglin.level, "Level did not increase!");
-    assert(prev.stealth != desert_froglin.stealth, "Stealth did not increase!");
     assert(prev.attack != desert_froglin.attack, "Attack did not increase!");
     assert(prev.defense != desert_froglin.defense, "Defense did not increase!");
     assert(prev.health != desert_froglin.health, "Health did not increase!");

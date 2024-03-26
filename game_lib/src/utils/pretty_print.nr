@@ -1,25 +1,26 @@
-use crate::types::player::PlayerTrait;
 use crate::types::froglin::Froglin;
 use crate::types::player::Player;
 use dep::std::println;
 
-unconstrained pub fn p_print<T>(player: T, secret: Field) where T: PlayerTrait {
+unconstrained pub fn p_print(player: Player, secret: Field) {
     println("");
     println("");
     println("----------------");
-    let id = player.generate_identity(secret);
-    println(f"PLAYER - IDENTITY {id}");
+    let (commitment,id) = player.generate_identity(secret);
+    println(f"PLAYER - IDENTITY {id} COMMITMENT {commitment}");
     println("----------------");
     println("STATS");
-    let mp = player.get_mana();
-    println(f"    Mana Power: {mp}");
-    let level = player._get_level();
+    let mana = player.mana;
+    println(f"    Mana: {mana}");
+    let c_mana = player.claimed_mana;
+    println(f"    Claimed Mana: {c_mana}");
+    let level = player.level;
     println(f"    Level: {level}");
-    let stash_root = player.get_stash_root();
+    let stash_root = player.stash_root;
     println(f"    Stash Root: {stash_root}");
     println("");
     println("FROGLINS");
-    let player_froglins = player.get_froglins();
+    let player_froglins = player.froglins;
     for i in 0..player_froglins.len() {
         if (player_froglins[i].id != 0) {
             let Froglin { type_id, id, stealth, attack, defense, health, level, awake_at, habitats } = player_froglins[i];

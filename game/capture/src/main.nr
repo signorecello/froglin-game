@@ -29,7 +29,7 @@ fn main(
 
     // check that the player has enough mana to catch the froglin
     let required_mana = caught_froglin.stealth + current_fog_level;
-    assert(player.mana_power > required_mana, "Not enough mana to catch the froglin");
+    assert(player.mana > required_mana, "Not enough mana to catch the froglin");
     updated_player.remove_mana(required_mana);
 
     // check that the player is in one of the froglin habitats
@@ -47,7 +47,8 @@ fn main(
     let _ = updated_player.add_froglin(caught_froglin);
 
     // update the player's identity
-    updated_player.generate_identity(secret)
+    let (_, identity) = updated_player.generate_identity(secret);
+    identity
 }
 
 #[test]
@@ -55,7 +56,7 @@ fn test_success_capture() {
     let mut player = Player::default();
     player.add_mana(200);
     let secret = 0x123;
-    let old_identity = player.generate_identity(secret);
+    let (_, old_identity) = player.generate_identity(secret);
 
     let froglin_id = 0x12;
     let mock_froglin = desert_froglin::new(froglin_id);
@@ -64,7 +65,6 @@ fn test_success_capture() {
     let current_epoch = mock_froglin.awake_at[0];
     let current_fog_level = 100;
 
-    // p_print(player, secret);
     let new_id = main(
         player,
         secret,
@@ -75,12 +75,13 @@ fn test_success_capture() {
         current_fog_level,
         current_epoch
     );
-    assert(new_id == 0x1678219dbdb51e9130e70b6401ea4e0e797c47dc4e8a5f95a0424c3ffbe8d99e);
+    assert(new_id == 0x2a122862ca1821bd706ba3ca486c918fc0e220ef3182c5e0c9fc82c4b1df5f66);
 
     let mut adversary = Player::default();
-    adversary.add_mana(99);
+    adversary.add_mana(200); // need to add AND remove so the claimed_mana stays the same
+    adversary.remove_mana(101);
     let _ = adversary.add_froglin(mock_froglin);
-    let adversary_id = adversary.generate_identity(secret);
+    let (_, adversary_id) = adversary.generate_identity(secret);
     assert(adversary_id == new_id);
 }
 
@@ -89,7 +90,7 @@ fn test_fail_no_mana() {
     let mut player = Player::default();
     player.add_mana(10);
     let secret = 0x123;
-    let old_identity = player.generate_identity(secret);
+    let (_, old_identity) = player.generate_identity(secret);
 
     let froglin_id = 0x12;
     let mock_froglin = desert_froglin::new(froglin_id);
@@ -108,7 +109,7 @@ fn test_fail_no_mana() {
         current_fog_level,
         current_epoch
     );
-    assert(new_id == 0x1678219dbdb51e9130e70b6401ea4e0e797c47dc4e8a5f95a0424c3ffbe8d99e);
+    assert(new_id == 0x2a122862ca1821bd706ba3ca486c918fc0e220ef3182c5e0c9fc82c4b1df5f66);
 }
 
 #[test(should_fail_with = "Not in the right zone to catch the froglin")]
@@ -116,7 +117,7 @@ fn test_fail_no_habitat() {
     let mut player = Player::default();
     player.add_mana(200);
     let secret = 0x123;
-    let old_identity = player.generate_identity(secret);
+    let (_, old_identity) = player.generate_identity(secret);
 
     let froglin_id = 0x12;
     let mock_froglin = desert_froglin::new(froglin_id);
@@ -135,7 +136,7 @@ fn test_fail_no_habitat() {
         current_fog_level,
         current_epoch
     );
-    assert(new_id == 0x1678219dbdb51e9130e70b6401ea4e0e797c47dc4e8a5f95a0424c3ffbe8d99e);
+    assert(new_id == 0x2a122862ca1821bd706ba3ca486c918fc0e220ef3182c5e0c9fc82c4b1df5f66);
 }
 
 #[test(should_fail_with = "Not at the right time to catch the froglin")]
@@ -143,7 +144,7 @@ fn test_fail_no_epoch() {
     let mut player = Player::default();
     player.add_mana(200);
     let secret = 0x123;
-    let old_identity = player.generate_identity(secret);
+    let (_, old_identity) = player.generate_identity(secret);
 
     let froglin_id = 0x12;
     let mock_froglin = desert_froglin::new(froglin_id);
@@ -162,5 +163,5 @@ fn test_fail_no_epoch() {
         current_fog_level,
         current_epoch
     );
-    assert(new_id == 0x1678219dbdb51e9130e70b6401ea4e0e797c47dc4e8a5f95a0424c3ffbe8d99e);
+    assert(new_id == 0x2a122862ca1821bd706ba3ca486c918fc0e220ef3182c5e0c9fc82c4b1df5f66);
 }

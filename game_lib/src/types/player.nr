@@ -1,4 +1,4 @@
-use crate::traits::{serialize::Serialize, player::PlayerTrait};
+use crate::traits::{serialize::Commit};
 use crate::globals::{PLAYER_SIZE, ITEM_MAX, FROGLIN_MAX, FROGLIN_SIZE, IDENTITY_SIZE};
 use crate::types::froglin::Froglin;
 use crate::types::item::Item;
@@ -11,16 +11,17 @@ use dep::std::hash::poseidon2::Poseidon2;
 use dep::std::eddsa::eddsa_to_pub;
 
 struct Player {
-	mana_power: u32,
+	mana: u32,
+    claimed_mana: u32,
 	level: Field,
 	stash_root: Field, // merkle tree root of the user's stash
 	inventory: [Item; ITEM_MAX], // max 5 items
 	froglins: [Froglin; FROGLIN_MAX], // max 5 froglins
 }
 
-impl Serialize<PLAYER_SIZE> for Player {
-    fn serialize(self) -> [Field; PLAYER_SIZE] {
-		let mut stats = [self.mana_power as Field, self.level, self.stash_root].as_slice();
+impl Commit<PLAYER_SIZE> for Player {
+    fn commit(self, secret: Field) -> Field {
+		let mut stats = [self.mana as Field, self.claimed_mana as Field, self.level, self.stash_root].as_slice();
 
         for i in 0..ITEM_MAX {
             stats = stats.append(self.inventory[i].serialize().as_slice());
@@ -30,19 +31,22 @@ impl Serialize<PLAYER_SIZE> for Player {
 	            stats = stats.push_back(self.froglins[i].serialize()[j]);
 			}
         }
+
     
-		let mut ret : [Field; PLAYER_SIZE] = [0; PLAYER_SIZE];
+		let mut ret : [Field; PLAYER_SIZE + 1] = [0; PLAYER_SIZE + 1];
 		for i in 0..PLAYER_SIZE {
 			ret[i] = stats[i];
 		};
-		ret
+        ret[PLAYER_SIZE] = secret;
+        Poseidon2::hash(ret, PLAYER_SIZE + 1)
 	}
 }
 
 impl Default for Player {
 	fn default() -> Self {
 		Player {
-			mana_power: 0,
+			mana: 0,
+            claimed_mana: 0,
 			level: 0,
 			stash_root: 0x0,
 			inventory: [Item::default(); ITEM_MAX],
@@ -53,7 +57,8 @@ impl Default for Player {
 
 impl Eq for Player {
     fn eq(self, other: Self) -> bool {
-        (self.mana_power == other.mana_power) &
+        (self.mana == other.mana) &
+        (self.claimed_mana == other.claimed_mana) &
         (self.level == other.level) &
 		(self.stash_root == other.stash_root) &
 		(self.inventory == other.inventory) &
@@ -61,37 +66,23 @@ impl Eq for Player {
     }
 }
 
-impl PlayerTrait for Player {
-	fn get_level(&mut self) -> Field {
-		for i in 0..FROGLIN_MAX {
-			self.level += self.froglins[i].level;
-		}
-		self.level
-	}
+impl Player {
+    fn get_level(&mut self) -> Field {
+        for i in 0..FROGLIN_MAX {
+            self.level += self.froglins[i].level;
+        }
+        self.level
+    }
 
-	fn _get_level(self) -> Field {
-		self.level
-	}
-
-	fn get_stash_root(self) -> Field {
-		self.stash_root
-	}
-
-	fn get_mana(self) -> u32 {
-		self.mana_power
-	}
-
-    fn add_mana(&mut self, amount: u32) {
-        self.mana_power += amount;
+    fn add_mana(&mut self, total_mana: u32) {
+        let unclaimed_mana = total_mana - self.claimed_mana;
+        self.mana += unclaimed_mana;
+        self.claimed_mana = total_mana;
     }
 
     fn remove_mana(&mut self, amount: u32) {
-        self.mana_power -= amount;
+        self.mana -= amount;
     }
-
-	fn get_froglins(self) -> [Froglin; FROGLIN_MAX] {
-		self.froglins
-	}
 
     fn add_froglin(&mut self, froglin: Froglin) -> bool {
         let is_storage_full = self.froglins.all(|f : Froglin| f.id != 0);
@@ -127,41 +118,52 @@ impl PlayerTrait for Player {
         *self
     }
 
-    fn generate_identity(self, secret: Field) -> Field {
-        let mut identity : [Field; IDENTITY_SIZE] = [0; IDENTITY_SIZE];
-        let serialized = self.serialize();
-
-        for i in 0..PLAYER_SIZE {
-            identity[i] = serialized[i];
-        }
-
+    fn generate_identity(self, secret: Field) -> (Field, Field) {
+        let commitment = self.commit(secret);
         let (pub_key_x, pub_key_y) = eddsa_to_pub(secret);
-        identity[PLAYER_SIZE] = pub_key_x;
-        identity[PLAYER_SIZE + 1] = pub_key_y;
 
-        Poseidon2::hash(identity, IDENTITY_SIZE)
+        (commitment, Poseidon2::hash([commitment, pub_key_x, pub_key_y], 3))
     }
 
     fn assert_identity(self, secret: Field, other: Field) {
-        let identity = self.generate_identity(secret);
+        let (_, identity) = self.generate_identity(secret);
         assert(identity == other, "Identity does not match");
     }
 }
 
 #[test]
 fn test_player_equality() {
-    let player = Player::default();
+    let player1 = Player::default();
     let player2 = Player::default();
-    assert(player == player2);
+    assert(player1 == player2);
+
+    let (p1c, p1i) = player1.generate_identity(0x01);
+    let (p2c, p2i) = player2.generate_identity(0x01);
+    assert(p1c == p2c);
+    assert(p1i == p2i);
 }
 
 #[test]
-fn test_boost_mp() {
+fn test_add_mana() {
     let mut player = Player::default();
-    player.add_mana(10);
-    assert(player.mana_power == 10);
-    player.add_mana(100);
-    assert(player.mana_power == 110);
+    player.add_mana(10); // user is entitled to 10 mana
+    assert(player.mana == 10);
+    player.add_mana(100); // user is entitled to 100 mana
+    assert(player.claimed_mana == 100); // he claimed all 100 mana
+    assert(player.mana == 100); // he didn't use any mana
+}
+
+#[test]
+fn test_claimed_mana() {
+    let mut player = Player::default();
+    player.add_mana(10); // user is entitled to 10 mana
+    assert(player.mana == 10);
+    player.add_mana(100); // user is entitled to 100 mana
+    assert(player.claimed_mana == 100); // he claimed all 100 mana
+
+    player.remove_mana(10); // user used 10 mana
+    assert(player.claimed_mana == 100); // he still claimed all 100 mana
+    assert(player.mana == 90); // but used 10
 }
 
 #[test]

@@ -9,15 +9,16 @@ use dep::game_lib::types::player::Player;
 fn main(
     player: Player,
     secret: Field,
-    mana: pub u32,
+    total_mana: pub u32,
     old_identity: pub Field // provided by the SC
 ) -> pub Field {
     // check that the player is the same as the one that was provided by the SC
     player.assert_identity(secret, old_identity);
 
     let mut updated_player = player;
-    updated_player.add_mana(mana);
-    updated_player.generate_identity(secret)
+    updated_player.add_mana(total_mana);
+    let (_, identity) = updated_player.generate_identity(secret);
+    identity
 }
 
 #[test]
@@ -26,13 +27,13 @@ fn test_success_boost_mana() {
     let secret = 0x1234;
     let boost = 10;
 
-    let old_identity = player.generate_identity(secret);
+    let (_, old_identity) = player.generate_identity(secret);
     let new_id = main(player, secret, boost, old_identity);
     assert(new_id != old_identity);
 
     let mut adversary = Player::default();
     adversary.add_mana(boost);
-    let adversary_id = adversary.generate_identity(secret);
+    let (_, adversary_id) = adversary.generate_identity(secret);
     assert(new_id == adversary_id);
 }
 
@@ -42,11 +43,12 @@ fn test_fail_boost_man() {
     let secret = 0x1234;
     let boost = 10;
 
-    let old_identity = player.generate_identity(secret);
+    let (_, old_identity) = player.generate_identity(secret);
     let new_id = main(player, secret, boost, old_identity);
     assert(new_id != old_identity);
 
     let mut adversary = Player::default();
-    let adversary_id = adversary.generate_identity(secret);
+    let (_, adversary_id) = adversary.generate_identity(secret);
+
     assert(new_id == adversary_id);
 }
