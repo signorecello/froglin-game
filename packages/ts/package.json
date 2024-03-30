@@ -1,0 +1,15 @@
+{
+  "name": "@froglin_game/ts",
+  "packageManager": "yarn@4.1.1",
+  "scripts": {
+    "start": "tsx index.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.1"
+  },
+  "dependencies": {
+    "@signorecello/bb_hashes": "^1.0.10",
+    "@zk-kit/smt": "https://gitpkg.now.sh/signorecello/zk-kit/packages/smt?zpedro/smt_pedersen",
+    "typescript": "^5.4.3"
+  }
+}

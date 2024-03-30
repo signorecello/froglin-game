@@ -4,9 +4,7 @@
 
 use crate::zones_types::zone_type::Zone;
 
+#[export]
 pub fn new() -> Zone {
-    Zone {
-        id: 1,
-        coords: [[0,0], [0, 100], [100, 0], [100,100]]
-    }
+    Zone { id: 1, coords: [[0, 0], [0, 100], [100, 0], [100, 100]] }
 }

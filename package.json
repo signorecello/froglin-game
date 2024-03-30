@@ -1,0 +1,13 @@
+{
+  "name": "froglin_ts",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "workspaces": [
+    "packages/ts"
+  ],
+  "scripts": {
+    "start": "yarn workspaces foreach -A run start"
+  },
+  "packageManager": "yarn@4.1.1"
+}

@@ -1,4 +1,4 @@
-use crate::traits::{serialize::Commit};
+use crate::traits::{serialize::{Serialize, Commit}, level::{Level, LevelUp}, froglin_inv::FroglinInventory, stash::Stash};
 use crate::globals::{PLAYER_SIZE, ITEM_MAX, FROGLIN_MAX, FROGLIN_SIZE, IDENTITY_SIZE};
 use crate::types::froglin::Froglin;
 use crate::types::item::Item;
@@ -19,20 +19,29 @@ struct Player {
 	froglins: [Froglin; FROGLIN_MAX], // max 5 froglins
 }
 
-impl Commit<PLAYER_SIZE> for Player {
-    fn commit(self, secret: Field) -> Field {
-		let mut stats = [self.mana as Field, self.claimed_mana as Field, self.level, self.stash_root].as_slice();
+impl Serialize<PLAYER_SIZE> for Player {
+    fn serialize(self) -> [Field; PLAYER_SIZE] {
+        let mut stats = [self.mana as Field, self.claimed_mana as Field, self.level, self.stash_root].as_slice();
 
         for i in 0..ITEM_MAX {
             stats = stats.append(self.inventory[i].serialize().as_slice());
         }
         for i in 0..FROGLIN_MAX {
-			for j in 0..FROGLIN_SIZE {
-	            stats = stats.push_back(self.froglins[i].serialize()[j]);
-			}
+            stats = stats.append(self.froglins[i].serialize().as_slice());
         }
 
-    
+		let mut ret : [Field; PLAYER_SIZE] = [0; PLAYER_SIZE];
+		for i in 0..PLAYER_SIZE {
+			ret[i] = stats[i];
+		};
+        ret
+    }
+}
+
+impl Commit<PLAYER_SIZE> for Player {
+    fn commit(self, secret: Field) -> Field {
+		let mut stats = self.serialize().as_slice();
+
 		let mut ret : [Field; PLAYER_SIZE + 1] = [0; PLAYER_SIZE + 1];
 		for i in 0..PLAYER_SIZE {
 			ret[i] = stats[i];
@@ -66,22 +75,23 @@ impl Eq for Player {
     }
 }
 
-impl Player {
-    fn get_level(&mut self) -> Field {
-        for i in 0..FROGLIN_MAX {
-            self.level += self.froglins[i].level;
-        }
+impl Level for Player {
+    fn get_level(self) -> Field {
         self.level
     }
+}
 
-    fn add_mana(&mut self, total_mana: u32) {
-        let unclaimed_mana = total_mana - self.claimed_mana;
-        self.mana += unclaimed_mana;
-        self.claimed_mana = total_mana;
-    }
-
-    fn remove_mana(&mut self, amount: u32) {
-        self.mana -= amount;
+impl FroglinInventory for Player {
+    fn get_froglin(self, id: Field) -> Froglin {
+        let mut found: bool = false;
+        for i in 0..FROGLIN_MAX {
+            if (self.froglins[i].id == id) {
+                found = true;
+                self.froglins[i]
+            }
+        }
+        assert(found == true, "Froglin not found");
+        Froglin::default()
     }
 
     fn add_froglin(&mut self, froglin: Froglin) -> bool {
@@ -107,8 +117,6 @@ impl Player {
     }
 
     fn update_froglin(&mut self, froglin: Froglin) -> Self {
-        let prev = *self;
-
         for i in 0..FROGLIN_MAX {
             if (self.froglins[i].id == froglin.id) {
                 self.froglins[i] = froglin;
@@ -116,6 +124,31 @@ impl Player {
         }
 
         *self
+    }
+}
+
+impl Stash for Player {
+    fn update_stash(&mut self, new_root: Field) {
+        self.stash_root = new_root;
+    }
+}
+
+impl Player {
+    fn level_up(&mut self, froglin: Froglin) {
+        self.get_froglin(froglin.id).level_up();
+        for i in 0..FROGLIN_MAX {
+            self.level += self.froglins[i].level;
+        }
+    }
+
+    fn add_mana(&mut self, total_mana: u32) {
+        let unclaimed_mana = total_mana - self.claimed_mana;
+        self.mana += unclaimed_mana;
+        self.claimed_mana = total_mana;
+    }
+
+    fn remove_mana(&mut self, amount: u32) {
+        self.mana -= amount;
     }
 
     fn generate_identity(self, secret: Field) -> (Field, Field) {
@@ -137,8 +170,10 @@ fn test_player_equality() {
     let player2 = Player::default();
     assert(player1 == player2);
 
+    println(player1.serialize());
     let (p1c, p1i) = player1.generate_identity(0x01);
     let (p2c, p2i) = player2.generate_identity(0x01);
+    println(p1c);
     assert(p1c == p2c);
     assert(p1i == p2i);
 }
@@ -196,9 +231,16 @@ fn test_calculate_level() {
     assert(level == 0);
 
     let mut desert_froglin = desert_froglin::new(0x01); // unique id for the froglin
-    player.add_froglin(desert_froglin);
-    player = player.update_froglin(desert_froglin.level_up());
 
+    player.add_froglin(desert_froglin);
+    let level = player.get_level();
+    assert(level == 0);
+
+    player.level_up(desert_froglin);
+    let level = player.get_level();
+    assert(level == 1);
+
+    player.level_up(desert_froglin);
     let level = player.get_level();
     assert(level == 2);
 }
