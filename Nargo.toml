@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "packages/noir/game/capture",
+    "packages/noir/game/mana_boost",
+    "packages/noir/game/stash_deposit",
+    "packages/noir/game/stash_update",
+    "packages/noir/game_lib",
+]
+default-member = "packages/noir/game_lib"

@@ -1,5 +1,0 @@
-{
-  "dependencies": {
-    "@noir-lang/noir_codegen": "^0.26.0"
-  }
-}

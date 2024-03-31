@@ -3,11 +3,21 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "type": "module",
   "workspaces": [
-    "packages/ts"
+    "packages/*"
   ],
   "scripts": {
-    "start": "yarn workspaces foreach -A run start"
+    "start": "yarn workspaces foreach -A run start",
+    "test": "yarn test::dry",
+    "test::dry": "DRY_RUN=true vitest"
   },
-  "packageManager": "yarn@4.1.1"
+  "packageManager": "yarn@4.1.1",
+  "devDependencies": {
+    "vitest": "^1.4.0"
+  },
+  "dependencies": {
+    "@types/node": "^20.12.2",
+    "@zk-kit/eddsa-poseidon": "^0.6.0"
+  }
 }

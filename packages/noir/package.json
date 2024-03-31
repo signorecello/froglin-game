@@ -1,0 +1,8 @@
+{
+    "name": "@froglin_game/noir",
+    "packageManager": "yarn@4.1.1",
+    "dependencies": {
+        "@froglin_game/ts": "workspace:*",
+        "typescript": "^5.4.3"
+    }
+}

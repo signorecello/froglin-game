@@ -8,7 +8,7 @@ use crate::utils::pretty_print::p_print;
 
 use dep::std::println;
 use dep::std::hash::poseidon2::Poseidon2;
-use dep::std::eddsa::eddsa_to_pub;
+use dep::std::ec::consts::te::baby_jubjub;
 
 struct Player {
 	mana: u32,
@@ -153,9 +153,13 @@ impl Player {
 
     fn generate_identity(self, secret: Field) -> (Field, Field) {
         let commitment = self.commit(secret);
-        let (pub_key_x, pub_key_y) = eddsa_to_pub(secret);
 
-        (commitment, Poseidon2::hash([commitment, pub_key_x, pub_key_y], 3))
+        let bjj = baby_jubjub();
+        let pubkey = bjj.curve.mul(secret, bjj.base8);
+
+        println(pubkey.x);
+        println(pubkey.y);
+        (commitment, Poseidon2::hash([commitment, pubkey.x, pubkey.y], 3))
     }
 
     fn assert_identity(self, secret: Field, other: Field) {
@@ -170,12 +174,32 @@ fn test_player_equality() {
     let player2 = Player::default();
     assert(player1 == player2);
 
-    println(player1.serialize());
     let (p1c, p1i) = player1.generate_identity(0x01);
     let (p2c, p2i) = player2.generate_identity(0x01);
-    println(p1c);
     assert(p1c == p2c);
     assert(p1i == p2i);
+
+    // output for js tests
+    println("#test_player_equality_start");
+    println(p1c);
+    println(p1i);
+    println(p2c);
+    println(p2i);
+    println("#test_player_equality_end");
+}
+
+#[test]
+fn test_player_inequality() {
+    let player = Player::default();
+    let mut player2 = Player::default();
+    player2.add_mana(10);
+    assert(player != player2);
+
+    // output for js tests
+    println("#test_player_inequality_start");
+    println(player.serialize());
+    println(player2.serialize());
+    println("#test_player_inequality_end");
 }
 
 #[test]
@@ -186,6 +210,26 @@ fn test_add_mana() {
     player.add_mana(100); // user is entitled to 100 mana
     assert(player.claimed_mana == 100); // he claimed all 100 mana
     assert(player.mana == 100); // he didn't use any mana
+
+    // output for js tests
+    println("#test_add_mana_start");
+    println(player.mana);
+    println(player.claimed_mana);
+    println("#test_add_mana_end");
+}
+
+#[test]
+fn test_remove_mana() {
+    let mut player = Player::default();
+    player.add_mana(100);
+    assert(player.mana == 100);
+    player.remove_mana(10);
+    assert(player.mana == 90);
+
+    // output for js tests
+    println("#test_remove_mana_start");
+    println(player.mana);
+    println("#test_removs_mana_end");
 }
 
 #[test]
@@ -199,14 +243,12 @@ fn test_claimed_mana() {
     player.remove_mana(10); // user used 10 mana
     assert(player.claimed_mana == 100); // he still claimed all 100 mana
     assert(player.mana == 90); // but used 10
-}
 
-#[test]
-fn test_player_inequality() {
-    let player = Player::default();
-    let mut player2 = Player::default();
-    player2.add_mana(10);
-    assert(player != player2);
+    // output for js tests
+    println("#test_claimed_mana_start");
+    println(player.mana);
+    println(player.claimed_mana);
+    println("#test_claimed_mana_end");
 }
 
 #[test]
