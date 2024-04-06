@@ -1,36 +1,36 @@
 use dep::game_lib::types::{player::Player, froglin::Froglin};
 use dep::game_lib::smt::smt::{add, verify};
 use dep::game_lib::globals::{FROGLIN_SIZE, TREE_DEPTH};
+use dep::game_lib::froglin_types::desert_froglin;
 use dep::std::hash::poseidon2::Poseidon2;
 
 fn main(
     player: Player,
     in_froglin: Froglin,
     froglin_siblings: [Field; TREE_DEPTH],
-    matching_entry: [Option<Field>; 2],
     secret: Field,
     old_identity: pub Field
 ) -> pub Field {
-    // check that the player is the same as the one that was provided by the SC
     player.assert_identity(secret, old_identity);
 
-    let value = in_froglin.commit(secret);
-    let key = Poseidon2::hash([value], 1);
+    let mut updated_player = player;
+    updated_player.add_froglin(in_froglin);
+    updated_player.stash_deposit(in_froglin.id, froglin_siblings, secret);
 
-    // prove non-membership
-    verify(
-        [key, value],
-        matching_entry,
-        froglin_siblings,
-        player.stash_root
-    );
-
-    // add the new entry
-    let new_root = add([key, value], player.stash_root, froglin_siblings);
-
-    // update the player
-    let mut new_player = player;
-    new_player.update_stash(new_root);
-    let (_, identity) = new_player.generate_identity(secret);
+    let (_, identity) = updated_player.generate_identity(secret);
     identity
+}
+
+#[test]
+fn test_e2e_deposit() {
+    let mut player = Player::default();
+    let secret = 0x123;
+    let (_, old_identity) = player.generate_identity(secret);
+
+    let froglin_id = 0x12;
+    let froglin = desert_froglin::new(froglin_id);
+    let mut siblings: [Field; TREE_DEPTH] = [0; TREE_DEPTH];
+
+    let identity = main(player, froglin, siblings, secret, old_identity);
+    assert(identity == 0x229d883c386bc4e0996b9bb3798928b6c3f85b77718e8549f43e19047de9ab96);
 }

@@ -2,8 +2,11 @@ import { Poseidon2 } from "@signorecello/bb_hashes";
 import {
 	FroglinTypes,
 	FroglinTypesEnum,
+	ZonesTypes,
 	ZonesTypesEnum,
 } from "../../froglin_types";
+import { Game } from "../game";
+import { toCircuitInputHex } from "../utils";
 
 type FroglinStats = {
 	id: bigint;
@@ -18,47 +21,46 @@ type FroglinStats = {
 };
 
 export class Froglin {
-	constructor(private stats: FroglinStats, private hasher: Poseidon2) {}
+	stats: FroglinStats;
 
-	static async new({ name, id }: { name: FroglinTypesEnum; id: bigint }) {
-		const poseidon = await Poseidon2.new();
+	constructor(public name: FroglinTypesEnum, public id: bigint) {
 		const froglin = { id, ...FroglinTypes[name] };
-		return new Froglin(froglin, poseidon);
+		this.stats = froglin;
 	}
 
-	// returns a bigint if passed a bigint, and a hex if passed a hex
-	hash = (data: bigint[]) => {
-		if (typeof data[0] === "bigint") {
-			return BigInt(this.hasher.hash(data));
-		}
-		return this.hasher.hash(data).slice(2);
-	};
-
-	getId() {
-		return this.stats.id;
-	}
-
-	serialize(options?: { hex: boolean }): bigint[] | string[] {
+	serialize() {
 		const { id, type_id, stealth, attack, defense, health, level } =
 			this.stats;
-		const serialized = [
-			id,
-			type_id,
-			stealth,
-			attack,
-			defense,
-			health,
-			level,
-		];
-		return options?.hex
-			? serialized.map((x) => `0x${BigInt(x).toString(16)}`)
-			: serialized;
+		return [id, type_id, stealth, attack, defense, health, level];
 	}
 
-	commit(secret: bigint, options?: { hex: boolean }) {
-		let stats = this.serialize({ hex: options?.hex }) as bigint[];
+	commit(secret: bigint) {
+		let stats = this.serialize();
 		stats.push(secret);
-		return this.hash(stats);
+		return Game.hash(stats);
+	}
+
+	toCircuitInput() {
+		let circuitInput = toCircuitInputHex({
+			id: this.id,
+			type_id: this.stats.type_id,
+			stealth: this.stats.stealth,
+			attack: this.stats.attack,
+			defense: this.stats.defense,
+			health: this.stats.health,
+			level: this.stats.level,
+		});
+		circuitInput["awake_at"] = this.stats.awake_at.map(toCircuitInputHex);
+		circuitInput["habitats"] = this.stats.habitats.map((h) => {
+			return {
+				id: toCircuitInputHex(ZonesTypes[h].id),
+				coords: ZonesTypes[h].coords.map((c) =>
+					c.map(toCircuitInputHex)
+				),
+			};
+		});
+
+		return circuitInput;
 	}
 
 	level_up() {

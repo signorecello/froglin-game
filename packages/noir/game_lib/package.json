@@ -1,0 +1,11 @@
+{
+    "name": "@froglin/game_lib",
+    "packageManager": "yarn@4.1.1",
+    "scripts": {
+        "test::lib": "vitest ${0:-''}"
+    },
+    "dependencies": {
+        "@froglin/game": "workspace:*",
+        "typescript": "^5.4.3"
+    }
+}

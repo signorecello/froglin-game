@@ -1,5 +1,5 @@
 [package]
-name = "update_stash"
+name = "stash_withdraw"
 type = "bin"
 authors = [""]
 compiler_version = ">=0.25.0"

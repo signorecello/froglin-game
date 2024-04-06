@@ -1,18 +1,33 @@
-import { Noir } from "@noir-lang/noir_js";
+import { InputMap, Noir } from "@noir-lang/noir_js";
 import { Backend, BarretenbergBackend } from "@noir-lang/backend_barretenberg";
-import { compile, createFileManager } from "@noir-lang/noir_wasm";
+import { resolve, join } from "path";
+import { readFileSync } from "fs";
+import os from "os";
 
-class Noir {
-	constructor() {}
+export class NoirInstance {
+	noir: Noir;
 
-	// static async new() {
-	// 	const noir = new Noir();
-	// 	const backend = new BarretenbergBackend();
-	// }
+	constructor(circuitName: string) {
+		const file = JSON.parse(
+			readFileSync(
+				resolve(
+					join(
+						__dirname,
+						`../../../noir/game/${circuitName}/target/${circuitName}.json`
+					)
+				),
+				"utf-8"
+			)
+		);
 
-	// async compileAndRun(code) {
-	// 	const compiled = compile(code, this.fileManager);
-	// 	const result = await this.backend.run(compiled);
-	// 	return result;
-	// }
+		const backend = new BarretenbergBackend(file, {
+			threads: os.cpus().length,
+		});
+		this.noir = new Noir(file, backend);
+	}
+
+	async prove(inputs: InputMap) {
+		const proof = await this.noir.generateProof(inputs);
+		return proof;
+	}
 }

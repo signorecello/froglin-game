@@ -1,8 +1,9 @@
 {
-  "name": "@froglin_game/ts",
+  "name": "@froglin/game",
   "packageManager": "yarn@4.1.1",
   "scripts": {
-    "start": "tsx index.ts"
+    "start": "tsx index.ts",
+    "test": "vitest ${0:-''}"
   },
   "devDependencies": {
     "tsx": "^4.7.1"

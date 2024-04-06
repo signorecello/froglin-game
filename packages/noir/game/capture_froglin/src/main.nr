@@ -43,7 +43,7 @@ fn main(
     let is_in_epoch = caught_froglin.awake_at.any(|epoch| epoch == current_epoch);
     assert(is_in_epoch, "Not at the right time to catch the froglin");
 
-    // froglin action will decide whether to store in inventory or in the stash
+    // add froglin to inventory
     let _ = updated_player.add_froglin(caught_froglin);
 
     // update the player's identity

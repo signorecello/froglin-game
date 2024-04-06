@@ -5,7 +5,7 @@ use crate::types::item::Item;
 use crate::froglin_types::desert_froglin;
 use crate::froglin_types::tree_froglin;
 use crate::utils::pretty_print::p_print;
-use crate::smt::smt::{add, verify};
+use crate::smt::smt::{add, delete};
 
 use dep::std::println;
 use dep::std::hash::poseidon2::Poseidon2;
@@ -47,6 +47,8 @@ impl Commit<PLAYER_SIZE> for Player {
 		for i in 0..PLAYER_SIZE {
 			ret[i] = stats[i];
 		};
+        // println(Poseidon2::hash(ret, PLAYER_SIZE));
+
         ret[PLAYER_SIZE] = secret;
         Poseidon2::hash(ret, PLAYER_SIZE + 1)
 	}
@@ -138,19 +140,35 @@ impl FroglinInventory for Player {
 }
 
 impl Stash for Player {
-    fn stash_deposit(&mut self, id: Field, siblings: [Field; TREE_DEPTH]) {
+    // passing the ID, because it's assumed the Froglin is in inventory
+    // so what if the user captures a froglin with a full inventory? that's fine, this is the
+    // proving layer... the game itself knows it so it will prompt the user "inventory full, select one froglin to deposit"
+    // this can change later ofc
+    fn stash_deposit(&mut self, id: Field, siblings: [Field; TREE_DEPTH], secret: Field) {
+        // prove froglin in inventory
         let froglin : Froglin = self.get_froglin(id);
         assert(froglin.id != 0, "Trying to deposit a froglin that is not in inventory!");
 
-        let value = froglin.commit(123);
+        // get key value
+        let value = froglin.commit(secret);
         let key = Poseidon2::hash([value], 1);
 
+        // prove add (membership proof)
         let new_root = add([key, value], self.stash_root, siblings);
         self.stash_root = new_root;
     }
 
-    fn stash_withdraw(&mut self, id: Field) {
-        // noop
+    fn stash_withdraw(&mut self, froglin: Froglin, siblings: [Field; TREE_DEPTH], secret: Field) {
+        // get key value
+        let value = froglin.commit(secret);
+        let key = Poseidon2::hash([value], 1);
+
+        // prove delete (membership + non-membership)
+        let new_root = delete([key, value], self.stash_root, siblings);
+
+        // prove it is now in inventory
+        self.add_froglin(froglin);
+        self.stash_root = new_root;
     }
 }
 
@@ -174,12 +192,11 @@ impl Player {
 
     fn generate_identity(self, secret: Field) -> (Field, Field) {
         let commitment = self.commit(secret);
+        println(commitment);
 
         let bjj = baby_jubjub();
         let pubkey = bjj.curve.mul(secret, bjj.base8);
 
-        println(pubkey.x);
-        println(pubkey.y);
         (commitment, Poseidon2::hash([commitment, pubkey.x, pubkey.y], 3))
     }
 
@@ -348,7 +365,8 @@ fn test_deposit_to_stash() {
     player.add_froglin(desert_froglin);
     let mut siblings: [Field; TREE_DEPTH] = [0; TREE_DEPTH];
 
-    player.stash_deposit(desert_froglin.id, siblings);
+    player.stash_deposit(desert_froglin.id, siblings, 0x7b);
+    assert(player.stash_root == 0x12ba7cfc51431da3cd27aa60267f8d5de4b3b51cd211a0c85e378ef541c9c7d5);
     println("#test_deposit_to_stash_start");
     println(player.stash_root);
     println("#test_deposit_to_stash_end");
@@ -362,8 +380,30 @@ fn test_fail_deposit_to_stash_not_in_inv() {
     let desert_froglin = desert_froglin::new(0x01);
     let mut siblings: [Field; TREE_DEPTH] = [0; TREE_DEPTH];
 
-    player.stash_deposit(desert_froglin.id, siblings);
+    player.stash_deposit(desert_froglin.id, siblings, 0x7b);
     println("#test_fail_deposit_to_stash_not_in_inv_start");
     println(player.stash_root);
     println("#test_fail_deposit_to_stash_not_in_inv_end");
+}
+
+#[test]
+fn test_withdraw_from_stash() {
+    let mut player = Player::default();
+    assert(player.stash_root == 0x0);
+    println("#test_withdraw_from_stash_start");
+
+    // add one froglin to inventory and deposit it to stash
+    let desert_froglin = desert_froglin::new(0x01);
+    let mut desert_froglin_siblings: [Field; TREE_DEPTH] = [0; TREE_DEPTH];
+    player.add_froglin(desert_froglin);
+    player.stash_deposit(desert_froglin.id, desert_froglin_siblings, 0x7b);
+    assert(player.stash_root == 0x12ba7cfc51431da3cd27aa60267f8d5de4b3b51cd211a0c85e378ef541c9c7d5);
+    println(player.stash_root);
+
+    // and now withdraw the first froglin and check the root is 0x0
+    player.stash_withdraw(desert_froglin, desert_froglin_siblings, 0x7b);
+    assert(player.stash_root == 0x0);
+    println(player.stash_root);
+
+    println("#test_withdraw_from_stash_end");
 }

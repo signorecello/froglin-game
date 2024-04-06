@@ -1,0 +1,11 @@
+{
+    "name": "@froglin/game_actions",
+    "packageManager": "yarn@4.1.1",
+    "scripts": {
+        "compile": "./compile.sh"
+    },
+    "dependencies": {
+        "@froglin/game": "workspace:*",
+        "typescript": "^5.4.3"
+    }
+}

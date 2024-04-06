@@ -1,16 +1,18 @@
 {
-  "name": "froglin_ts",
+  "name": "@froglin/froglin",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/noir/*",
+    "packages/ts"
   ],
   "scripts": {
     "start": "yarn workspaces foreach -A run start",
-    "test": "yarn test::dry ${0}",
-    "test::dry": "DRY_RUN=true vitest ${0}"
+    "compile": "yarn workspace @froglin/game_actions compile",
+    "test": "yarn test::lib ${0:-''}",
+    "test::lib": "DRY_RUN=true yarn workspace @froglin/game_lib test::lib ${0:-''}"
   },
   "packageManager": "yarn@4.1.1",
   "devDependencies": {

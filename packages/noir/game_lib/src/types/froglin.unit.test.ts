@@ -1,17 +1,21 @@
 import { beforeAll, beforeEach, describe, test, it } from "vitest";
-import { Froglin, Player } from "@froglin_game/ts";
-import { execSync } from "child_process";
-import { FroglinTypes, FroglinTypesEnum } from "@froglin_game/ts/froglin_types";
+import { Froglin, Player } from "@froglin/game";
+import { exec } from "child_process";
+import { FroglinTypes, FroglinTypesEnum } from "@froglin/game/froglin_types";
 
 const nargoTest = async (testName: string) => {
-	const capture = execSync(`nargo test --show-output ${testName}`);
-	const filtered = capture
-		.toString()
-		.split(`#${testName}_end`)[0]
-		.split(`#${testName}_start`)[1]
-		.split("\n")
-		.filter((x) => x);
-	return filtered;
+	return new Promise<string[]>((resolve) => {
+		exec(`nargo test --show-output ${testName}`, (error, stdout) => {
+			const filtered = stdout
+				.toString()
+				.split(`#${testName}_end`)[0]
+				.split(`#${testName}_start`)[1]
+				.split("\n")
+				.filter((x) => x);
+			resolve(filtered);
+			return filtered;
+		});
+	});
 };
 
 // teaching ts how to serialize BigInt
@@ -25,10 +29,7 @@ describe("Froglin Tests", () => {
 	let froglin;
 
 	beforeEach(async () => {
-		froglin = await Froglin.new({
-			name: FroglinTypesEnum.desert_froglin,
-			id: 1n,
-		});
+		froglin = new Froglin(FroglinTypesEnum.desert_froglin, 1n);
 	});
 
 	describe("Level up", () => {

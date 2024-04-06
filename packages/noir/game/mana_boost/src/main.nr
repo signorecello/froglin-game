@@ -17,6 +17,7 @@ fn main(
 
     let mut updated_player = player;
     updated_player.add_mana(total_mana);
+
     let (_, identity) = updated_player.generate_identity(secret);
     identity
 }
