@@ -1,4 +1,4 @@
-use dep::std::hash::pedersen_hash;
+use dep::std::hash::poseidon2::Poseidon2;
 use crate::globals::TREE_DEPTH;
 
 /*
@@ -21,9 +21,9 @@ pub fn key_to_path(key: Field) -> [u1] {
  */
 pub fn hash(left: Field, right: Field, is_leaf: bool) -> Field {
     if (is_leaf) {
-        pedersen_hash([left, right, 1])
+        Poseidon2::hash([left, right, 1], 3)
     } else {
-        pedersen_hash([left, right])
+        Poseidon2::hash([left, right], 2)
     }
 }
 
@@ -99,6 +99,7 @@ pub fn calculate_two_roots(entry: [Field; 2], siblings: [Field; TREE_DEPTH]) -> 
             }
         }
     }
+
     (short_path_node, long_path_node)
 }
 
@@ -106,12 +107,12 @@ pub fn calculate_two_roots(entry: [Field; 2], siblings: [Field; TREE_DEPTH]) -> 
 fn test_hash_leaf_node() {
     let key = 20438969296305830531522370305156029982566273432331621236661483041446048135547;
     let value = 17150136040889237739751319962368206600863150289695545292530539263327413090784;
-    assert(hash(key, value, true) == 0x055b34560562b842e236f919e9a74ee345d7523d70f711e0ccdb22466c767c20);
+    assert(hash(key, value, true) == 0x095c888b463f391872a3fa42d94c2f82e23db9b832b61812e6880adf4b752843);
 }
 
 #[test]
 fn test_hash_node() {
     let left = 7374494214024125590767526270082639043919066776944047470878693145844636921798;
     let right = 3315292394704439116482935361251007857050519763420264982454883186141315324846;
-    assert(hash(left, right, false) == 0x05f8a24a037ad8567c042c14c5a8299649e0fe13df1cec40d381a3671bae9245);
+    assert(hash(left, right, false) == 0x263a1c92ef5134e65851f4cc34c60648342b2f2c3c540bda8ac30965cc16e854);
 }

@@ -1200,6 +1200,7 @@ __metadata:
   dependencies:
     "@types/node": "npm:^20.12.2"
     "@zk-kit/eddsa-poseidon": "npm:^0.6.0"
+    "@zk-kit/smt": "https://gitpkg.now.sh/signorecello/zk-kit/packages/smt?zpedro/smt_pedersen"
     vitest: "npm:^1.4.0"
   languageName: unknown
   linkType: soft

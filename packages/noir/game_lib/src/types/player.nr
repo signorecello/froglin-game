@@ -1,10 +1,11 @@
 use crate::traits::{serialize::{Serialize, Commit}, level::{Level, LevelUp}, froglin_inv::FroglinInventory, stash::Stash};
-use crate::globals::{PLAYER_SIZE, ITEM_MAX, FROGLIN_MAX, FROGLIN_SIZE, IDENTITY_SIZE};
+use crate::globals::{PLAYER_SIZE, ITEM_MAX, FROGLIN_MAX, FROGLIN_SIZE, IDENTITY_SIZE, TREE_DEPTH};
 use crate::types::froglin::Froglin;
 use crate::types::item::Item;
 use crate::froglin_types::desert_froglin;
 use crate::froglin_types::tree_froglin;
 use crate::utils::pretty_print::p_print;
+use crate::smt::smt::{add, verify};
 
 use dep::std::println;
 use dep::std::hash::poseidon2::Poseidon2;
@@ -83,37 +84,46 @@ impl Level for Player {
 
 impl FroglinInventory for Player {
     fn get_froglin(self, id: Field) -> Froglin {
-        let mut found: bool = false;
+        let mut found: Froglin = Froglin::default();
         for i in 0..FROGLIN_MAX {
             if (self.froglins[i].id == id) {
-                found = true;
-                self.froglins[i]
+                found = self.froglins[i];
             }
         }
-        assert(found == true, "Froglin not found");
-        Froglin::default()
+        assert(found.id != Froglin::default().id, "Froglin not found");
+        found
     }
 
-    fn add_froglin(&mut self, froglin: Froglin) -> bool {
+    fn add_froglin(&mut self, froglin: Froglin) {
         let is_storage_full = self.froglins.all(|f : Froglin| f.id != 0);
-        if (is_storage_full) {
-            // TODO will add to stash
-            assert(false, "Inventory is full!");
-        }
-
+        assert(!is_storage_full, "Inventory is full! Deposit one froglin to stash first.");
+        
         // no break statement in Noir so I need to use a flag
-        let mut found = false;
+        let mut found_empty_slot = false;
         // iterate over all the inventory's froglins
         for i in 0..FROGLIN_MAX {
             if (self.froglins[i].id == 0) {
-                if (found == false) {
+                if (found_empty_slot == false) {
                     self.froglins[i] = froglin;
-                    found = true;
+                    found_empty_slot = true;
                 }
             }
         }
-        assert(found, "Inventory is full!");
-        is_storage_full
+    }
+
+    fn remove_froglin(&mut self, id: Field) -> bool {
+        // no break statement in Noir so I need to use a flag
+        let mut removed = false;
+        // iterate over all the inventory's froglins
+        for i in 0..FROGLIN_MAX {
+            if (self.froglins[i].id == id) {
+                if (removed == false) {
+                    self.froglins[i] = Froglin::default();
+                    removed = true;
+                }
+            }
+        }
+        removed
     }
 
     fn update_froglin(&mut self, froglin: Froglin) -> Self {
@@ -128,8 +138,19 @@ impl FroglinInventory for Player {
 }
 
 impl Stash for Player {
-    fn update_stash(&mut self, new_root: Field) {
+    fn stash_deposit(&mut self, id: Field, siblings: [Field; TREE_DEPTH]) {
+        let froglin : Froglin = self.get_froglin(id);
+        assert(froglin.id != 0, "Trying to deposit a froglin that is not in inventory!");
+
+        let value = froglin.commit(123);
+        let key = Poseidon2::hash([value], 1);
+
+        let new_root = add([key, value], self.stash_root, siblings);
         self.stash_root = new_root;
+    }
+
+    fn stash_withdraw(&mut self, id: Field) {
+        // noop
     }
 }
 
@@ -174,8 +195,8 @@ fn test_player_equality() {
     let player2 = Player::default();
     assert(player1 == player2);
 
-    let (p1c, p1i) = player1.generate_identity(0x01);
-    let (p2c, p2i) = player2.generate_identity(0x01);
+    let (p1c, p1i) = player1.generate_identity(0x7b);
+    let (p2c, p2i) = player2.generate_identity(0x7b);
     assert(p1c == p2c);
     assert(p1i == p2i);
 
@@ -229,7 +250,7 @@ fn test_remove_mana() {
     // output for js tests
     println("#test_remove_mana_start");
     println(player.mana);
-    println("#test_removs_mana_end");
+    println("#test_remove_mana_end");
 }
 
 #[test]
@@ -255,15 +276,46 @@ fn test_claimed_mana() {
 fn test_add_froglin() {
     let mut player = Player::default();
     let desert_froglin = desert_froglin::new(0x01); // unique id for the froglin
-    let to_stash = player.add_froglin(desert_froglin);
-    assert(to_stash == false);
+    player.add_froglin(desert_froglin);
 
     let tree_froglin = tree_froglin::new(0x02);
-    let to_stash = player.add_froglin(tree_froglin);
-    assert(to_stash == false);
+    player.add_froglin(tree_froglin);
 
     assert(player.froglins[0].id == 1);
     assert(player.froglins[1].id == 2);
+    println("#test_add_froglin_start");
+    println(player.froglins[0].id);
+    println(player.froglins[1].id);
+    println("#test_add_froglin_end");
+}
+
+#[test]
+fn test_remove_froglin() {
+    let mut player = Player::default();
+    let desert_froglin = desert_froglin::new(0x01); // unique id for the froglin
+
+    player.add_froglin(desert_froglin);
+    assert(player.froglins[0].id == 1);
+
+    println("#test_remove_froglin_start");
+    println(player.froglins[0].id);
+
+    let is_removed = player.remove_froglin(desert_froglin.id);
+    assert(is_removed);
+    assert(player.froglins.all(|f : Froglin| f.id == 0));
+    println(player.froglins.all(|f : Froglin| f.id == 0));
+    println("#test_add_froglin_end");
+}
+
+#[test(should_fail_with="Inventory is full! Deposit one froglin to stash first.")]
+fn test_fail_inventory_full() {
+    let mut player = Player::default();
+    assert(player.stash_root == 0x0);
+
+    for i in 1..FROGLIN_MAX + 2 {
+        let desert_froglin = desert_froglin::new(i as Field);
+        player.add_froglin(desert_froglin);
+    }
 }
 
 #[test]
@@ -287,3 +339,31 @@ fn test_calculate_level() {
     assert(level == 2);
 }
 
+#[test]
+fn test_deposit_to_stash() {
+    let mut player = Player::default();
+    assert(player.stash_root == 0x0);
+
+    let desert_froglin = desert_froglin::new(0x01);
+    player.add_froglin(desert_froglin);
+    let mut siblings: [Field; TREE_DEPTH] = [0; TREE_DEPTH];
+
+    player.stash_deposit(desert_froglin.id, siblings);
+    println("#test_deposit_to_stash_start");
+    println(player.stash_root);
+    println("#test_deposit_to_stash_end");
+}
+
+#[test(should_fail_with="Froglin not found")]
+fn test_fail_deposit_to_stash_not_in_inv() {
+    let mut player = Player::default();
+    assert(player.stash_root == 0x0);
+
+    let desert_froglin = desert_froglin::new(0x01);
+    let mut siblings: [Field; TREE_DEPTH] = [0; TREE_DEPTH];
+
+    player.stash_deposit(desert_froglin.id, siblings);
+    println("#test_fail_deposit_to_stash_not_in_inv_start");
+    println(player.stash_root);
+    println("#test_fail_deposit_to_stash_not_in_inv_end");
+}

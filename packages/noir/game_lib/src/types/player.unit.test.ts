@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, describe, test, it } from "vitest";
-import { Player } from "@froglin_game/ts";
+import { Froglin, Player } from "@froglin_game/ts";
 import { execSync } from "child_process";
+import { FroglinTypesEnum } from "@froglin_game/ts/froglin_types";
 
 const nargoTest = async (testName: string) => {
 	const capture = execSync(`nargo test --show-output ${testName}`);
@@ -21,11 +22,11 @@ BigInt.prototype.toJSON = function () {
 };
 
 describe("Player Tests", () => {
-	let player1, player2;
+	let player1: Player, player2: Player;
 
 	beforeEach(async () => {
-		player1 = await Player.new();
-		player2 = await Player.new();
+		player1 = await Player.new(123n);
+		player2 = await Player.new(123n);
 	});
 
 	describe("Player Equality", () => {
@@ -35,12 +36,8 @@ describe("Player Tests", () => {
 		test("Typescript", async ({ expect }) => {
 			expect(JSON.stringify(player1)).toEqual(JSON.stringify(player2));
 
-			({ commitment: p1c, identity: p1i } = player1.generateIdentity({
-				secret: 1n,
-			}));
-			({ commitment: p2c, identity: p2i } = player2.generateIdentity({
-				secret: 1n,
-			}));
+			({ commitment: p1c, identity: p1i } = player1.generateIdentity());
+			({ commitment: p2c, identity: p2i } = player2.generateIdentity());
 
 			expect(p1c).toEqual(p2c);
 			expect(p1i).toEqual(p2i);
@@ -61,8 +58,8 @@ describe("Player Tests", () => {
 		let player1, player2;
 
 		beforeAll(async () => {
-			player1 = await Player.new();
-			player2 = await Player.new();
+			player1 = await Player.new(123n);
+			player2 = await Player.new(123n);
 			player2.addMana(10n);
 		});
 
@@ -90,8 +87,8 @@ describe("Player Mana", () => {
 		let player1, player2;
 
 		beforeAll(async () => {
-			player1 = await Player.new();
-			player2 = await Player.new();
+			player1 = await Player.new(123n);
+			player2 = await Player.new(123n);
 		});
 
 		test("Typescript", async ({ expect }) => {
@@ -114,7 +111,7 @@ describe("Player Mana", () => {
 		let player1;
 
 		beforeAll(async () => {
-			player1 = await Player.new();
+			player1 = await Player.new(123n);
 		});
 
 		test("Typescript", async ({ expect }) => {
@@ -135,7 +132,7 @@ describe("Player Mana", () => {
 		let player1;
 
 		beforeAll(async () => {
-			player1 = await Player.new();
+			player1 = await Player.new(123n);
 		});
 
 		test("Typescript", async ({ expect }) => {
@@ -156,88 +153,197 @@ describe("Player Mana", () => {
 		});
 	});
 });
-// #[test]
-// fn test_player_equality() {
-//     let player1 = Player::default();
-//     let player2 = Player::default();
-//     assert(player1 == player2);
 
-//     println(player1.serialize());
-//     let (p1c, p1i) = player1.generate_identity(0x01);
-//     let (p2c, p2i) = player2.generate_identity(0x01);
-//     println(p1c);
-//     assert(p1c == p2c);
-//     assert(p1i == p2i);
-// }
+describe("Player Froglin Inventory", () => {
+	describe("Add Froglin to Inventory", () => {
+		let testName = "test_add_froglin";
 
-// #[test]
-// fn test_add_mana() {
-//     let mut player = Player::default();
-//     player.add_mana(10); // user is entitled to 10 mana
-//     assert(player.mana == 10);
-//     player.add_mana(100); // user is entitled to 100 mana
-//     assert(player.claimed_mana == 100); // he claimed all 100 mana
-//     assert(player.mana == 100); // he didn't use any mana
-// }
+		let player1: Player;
+		let froglin1: Froglin, froglin2: Froglin;
 
-// #[test]
-// fn test_claimed_mana() {
-//     let mut player = Player::default();
-//     player.add_mana(10); // user is entitled to 10 mana
-//     assert(player.mana == 10);
-//     player.add_mana(100); // user is entitled to 100 mana
-//     assert(player.claimed_mana == 100); // he claimed all 100 mana
+		beforeEach(async () => {
+			player1 = await Player.new(123n);
+			[froglin1, froglin2] = [
+				await Froglin.new({
+					name: FroglinTypesEnum.desert_froglin,
+					id: 1n,
+				}),
+				await Froglin.new({
+					name: FroglinTypesEnum.tree_froglin,
+					id: 2n,
+				}),
+			];
+		});
 
-//     player.remove_mana(10); // user used 10 mana
-//     assert(player.claimed_mana == 100); // he still claimed all 100 mana
-//     assert(player.mana == 90); // but used 10
-// }
+		test("Typescript", async ({ expect }) => {
+			player1.addFroglin(froglin1);
+			player1.addFroglin(froglin2);
+			expect(player1.getFroglin(froglin1.getId()).getId()).toBeTruthy();
+			expect(player1.getFroglin(froglin2.getId()).getId()).toBeTruthy();
+		});
 
-// #[test]
-// fn test_player_inequality() {
-//     let player = Player::default();
-//     let mut player2 = Player::default();
-//     player2.add_mana(10);
-//     assert(player != player2);
-// }
+		test("Noir", async ({ expect }) => {
+			player1.addFroglin(froglin1);
+			player1.addFroglin(froglin2);
+			const froglinIds = await nargoTest(testName);
 
-// #[test]
-// fn test_add_froglin() {
-//     let mut player = Player::default();
-//     let desert_froglin = desert_froglin::new(0x01); // unique id for the froglin
-//     let to_stash = player.add_froglin(desert_froglin);
-//     assert(to_stash == false);
+			const [id1, id2] = froglinIds.map(BigInt);
+			expect(player1.getFroglin(froglin1.getId()).getId()).toEqual(id1);
+			expect(player1.getFroglin(froglin2.getId()).getId()).toEqual(id2);
+		});
+	});
 
-//     let tree_froglin = tree_froglin::new(0x02);
-//     let to_stash = player.add_froglin(tree_froglin);
-//     assert(to_stash == false);
+	describe("Remove Froglin from Inventory", () => {
+		let testName = "test_remove_froglin";
 
-//     assert(player.froglins[0].id == 1);
-//     assert(player.froglins[1].id == 2);
-// }
+		let player1: Player;
+		let froglin1: Froglin;
 
-// #[test]
-// fn test_calculate_level() {
-//     let mut player = Player::default();
-//     let level = player.get_level();
-//     assert(level == 0);
+		beforeEach(async () => {
+			player1 = await Player.new(123n);
+			froglin1 = await Froglin.new({
+				name: FroglinTypesEnum.desert_froglin,
+				id: 1n,
+			});
+		});
 
-//     let mut desert_froglin = desert_froglin::new(0x01); // unique id for the froglin
+		test("Typescript", async ({ expect }) => {
+			player1.addFroglin(froglin1);
+			expect(player1.getFroglin(froglin1.getId()).getId()).toBeTruthy();
 
-//     player.add_froglin(desert_froglin);
-//     let level = player.get_level();
-//     assert(level == 0);
+			player1.removeFroglin(froglin1.getId());
+			expect(player1.getFroglin(froglin1.getId())).toBeFalsy();
+		});
 
-//     player.level_up(desert_froglin);
-//     let level = player.get_level();
-//     assert(level == 1);
+		test("Noir", async ({ expect }) => {
+			player1.addFroglin(froglin1);
+			const [beforeId, isEmpty] = await nargoTest(testName);
 
-//     player.level_up(desert_froglin);
-//     let level = player.get_level();
-//     assert(level == 2);
-// }
+			expect(player1.getFroglin(froglin1.getId()).getId()).toEqual(
+				BigInt(beforeId)
+			);
+			expect(isEmpty).toBeTruthy();
+		});
+	});
+});
 
-// const froglin = new Froglin(1n);
-// console.log(froglin.serialize({ hex: true }));
-// froglin.level_up();
-// console.log(froglin.serialize({ hex: true }));
+describe("Player Stash", () => {
+	describe("Deposit Froglin to Stash", () => {
+		let testName = "test_deposit_to_stash";
+		let player1: Player;
+		let froglin1: Froglin, froglin2: Froglin;
+
+		// using beforeEach here because I want a clean slate for the noir test
+		beforeEach(async () => {
+			player1 = await Player.new(123n);
+			[froglin1, froglin2] = [
+				await Froglin.new({
+					name: FroglinTypesEnum.desert_froglin,
+					id: 1n,
+				}),
+				await Froglin.new({
+					name: FroglinTypesEnum.tree_froglin,
+					id: 2n,
+				}),
+			];
+		});
+
+		test("Typescript", async ({ expect }) => {
+			expect(player1.getStash().smt.root).toEqual(0n);
+			expect(player1.getStash().db).toHaveLength(0);
+
+			player1.addFroglin(froglin1);
+			player1.depositToStash(froglin1.getId());
+
+			const smtProof1 = player1
+				.getStash()
+				.smt.createProof(
+					froglin1.hash([froglin1.commit(123n) as bigint])
+				);
+
+			expect(smtProof1.root).toEqual(
+				8471127447559042083782711663856862886182885973376147476697535599297241401301n
+			);
+			expect(smtProof1.membership).toBe(true);
+			expect(smtProof1.siblings).toHaveLength(0);
+			expect(player1.getStash().db).toContain(froglin1);
+
+			player1.addFroglin(froglin2);
+			player1.depositToStash(froglin2.getId());
+
+			const smtProof2 = player1
+				.getStash()
+				.smt.createProof(
+					froglin1.hash([froglin2.commit(123n) as bigint])
+				);
+
+			expect(smtProof2.root).toEqual(
+				10100837414160198147507679111801633728684173158568628823171386341278612230344n
+			);
+			expect(smtProof2.membership).toBe(true);
+			expect(smtProof2.siblings[0]).toBe(
+				8471127447559042083782711663856862886182885973376147476697535599297241401301n
+			);
+			expect(player1.getStash().db).toContain(froglin2);
+		});
+
+		test("Noir", async ({ expect }) => {
+			expect(player1.getStash().smt.root).toEqual(0n);
+
+			player1.addFroglin(froglin1);
+			player1.depositToStash(froglin1.getId());
+
+			const smtProof = player1
+				.getStash()
+				.smt.createProof(
+					froglin1.hash([froglin1.commit(123n) as bigint])
+				);
+
+			const [newRoot] = await nargoTest(testName);
+			expect(`0x${smtProof.root.toString(16)}`).toEqual(newRoot);
+		});
+	});
+
+	describe("Withdraw Froglin from Stash", () => {
+		let testName = "test_withdraw_from_stash";
+		let player1: Player;
+		let froglin1: Froglin;
+
+		// using beforeEach here because I want a clean slate for the noir test
+		beforeEach(async () => {
+			player1 = await Player.new(123n);
+			froglin1 = await Froglin.new({
+				name: FroglinTypesEnum.desert_froglin,
+				id: 1n,
+			});
+		});
+
+		test("Typescript", async ({ expect }) => {
+			expect(player1.getStash().smt.root).toEqual(0n);
+			expect(player1.getStash().db).toHaveLength(0);
+
+			player1.addFroglin(froglin1);
+			player1.depositToStash(froglin1.getId());
+			player1.withdrawFromStash(froglin1.getId());
+
+			expect(player1.getStash().smt.root).toEqual(0n);
+			expect(player1.getStash().db).toHaveLength(0);
+			expect(player1.getFroglin(froglin1.getId()).getId()).toBeTruthy();
+		});
+
+		// test("Noir", async ({ expect }) => {
+		// 	expect(player1.getStash().smt.root).toEqual(0n);
+
+		// 	player1.depositToStash(froglin1);
+
+		// 	const smtProof = player1
+		// 		.getStash()
+		// 		.smt.createProof(
+		// 			froglin1.hash([froglin1.commit(123n) as bigint])
+		// 		);
+
+		// 	const [newRoot] = await nargoTest(testName);
+		// 	expect(`0x${smtProof.root.toString(16)}`).toEqual(newRoot);
+		// });
+	});
+});

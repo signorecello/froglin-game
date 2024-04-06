@@ -3,6 +3,8 @@ import { Froglin } from "../froglin";
 import { Poseidon2 } from "@signorecello/bb_hashes";
 import { Item } from "../item";
 import { mulPointEscalar, Base8 } from "@zk-kit/baby-jubjub";
+import { FroglinTypes, FroglinTypesEnum } from "../../froglin_types";
+import { ChildNodes, SMT } from "@zk-kit/smt";
 
 type PlayerStats = {
 	mana?: bigint;
@@ -19,28 +21,46 @@ export class Player {
 	private identity: bigint;
 
 	constructor(
-		private stats: PlayerStats = {
-			mana: 0n,
-			claimedMana: 0n,
-			level: 0n,
-			stashRoot: 0n,
-			inventory: Array(ITEM_MAX).fill(new Item()),
-			froglins: Array(FROGLIN_MAX).fill(new Froglin()),
-		},
+		private stats: PlayerStats,
 		private hasher: Poseidon2,
+		private stash: { smt: SMT; db: Array<Froglin> },
+		private secret: bigint,
 		fromNew: boolean = false
 	) {
 		if (!fromNew)
 			throw new Error("Use Player.new() to create a new player");
 	}
 
-	static async new(player?: PlayerStats) {
+	static async new(
+		secret: bigint,
+		player: PlayerStats = {
+			mana: 0n,
+			claimedMana: 0n,
+			level: 0n,
+			stashRoot: 0n,
+			inventory: Array(ITEM_MAX).fill(new Item()),
+		}
+	) {
 		const poseidon = await Poseidon2.new();
-		return new Player(player, poseidon, true);
+		const defaultFroglins = Array(FROGLIN_MAX).fill(
+			await Froglin.new({ name: FroglinTypesEnum.default, id: 0n })
+		);
+		player.froglins = defaultFroglins;
+
+		const smtHasher = (childNodes: ChildNodes) =>
+			BigInt(poseidon.hash(childNodes as bigint[]));
+		const stash = { smt: new SMT(smtHasher, true), db: [] };
+		player.stashRoot = stash.smt.root as bigint;
+
+		return new Player(player, poseidon, stash, secret, true);
 	}
 
+	// returns a bigint if passed a bigint, and a hex if passed a hex
 	hash = (data: bigint[]) => {
-		return BigInt(this.hasher.hash(data));
+		if (typeof data[0] === "bigint") {
+			return BigInt(this.hasher.hash(data));
+		}
+		return this.hasher.hash(data).slice(2);
 	};
 
 	serialize(options?: { hex: boolean }): bigint[] | string[] {
@@ -63,25 +83,25 @@ export class Player {
 			: serialized;
 	}
 
-	commit(secret: bigint, options?: { hex: boolean }) {
+	commit(options?: { hex: boolean }) {
 		let stats = this.serialize({ hex: options?.hex }) as bigint[];
-		stats.push(secret);
+		stats.push(this.secret);
 		return this.hash(stats);
 	}
 
-	generateIdentity({ secret }: { secret: bigint }) {
-		const derivedPublic = mulPointEscalar(Base8, secret);
+	generateIdentity() {
+		const derivedPublic = mulPointEscalar(Base8, this.secret);
 
 		[this.publicKey.x, this.publicKey.y] = derivedPublic.map((i) =>
 			BigInt(i)
 		);
 
-		this.commitment = this.commit(secret);
+		this.commitment = this.commit() as bigint;
 		this.identity = this.hash([
 			this.commitment,
 			this.publicKey.x,
 			this.publicKey.y,
-		]);
+		]) as bigint;
 
 		const { commitment, identity } = this;
 		return { commitment, identity };
@@ -101,10 +121,63 @@ export class Player {
 		if (process.env.DRY_RUN) return;
 	}
 
-	// fn generate_identity(self, secret: Field) -> (Field, Field) {
-	//     let commitment = self.commit(secret);
-	//     let (pub_key_x, pub_key_y) = eddsa_to_pub(secret);
+	getFroglin(id: bigint) {
+		return this.stats.froglins.find((f) => f.getId() == id);
+	}
 
-	//     (commitment, Poseidon2::hash([commitment, pub_key_x, pub_key_y], 3))
-	// }
+	getFroglinIndex(id: bigint) {
+		return this.stats.froglins.findIndex((f) => f.getId() == id);
+	}
+
+	addFroglin(froglin: Froglin) {
+		console.log(froglin);
+		if (this.stats.froglins.every((f) => f.getId() != 0n)) {
+			throw new Error(
+				"Froglin inventory is full! Need to deposit one froglin to stash."
+			);
+		}
+
+		let defaultFroglinIndex = this.stats.froglins.findIndex(
+			(f) => f.getId() == 0n
+		);
+		// console.log(this.stats);
+		this.stats.froglins[defaultFroglinIndex] = froglin;
+		// console.log(this.stats);
+	}
+
+	removeFroglin(id: bigint) {
+		const toRemoveIndex = this.getFroglinIndex(id);
+
+		const froglin = { id: 0n, ...FroglinTypes[FroglinTypesEnum.default] };
+		const defaultFroglin = new Froglin(froglin, this.hasher);
+		this.stats.froglins[toRemoveIndex] = defaultFroglin;
+	}
+
+	getStash() {
+		return this.stash;
+	}
+
+	depositToStash(id: bigint) {
+		const froglinToDeposit = this.getFroglin(id);
+		const value = froglinToDeposit.commit(this.secret) as bigint;
+
+		const key = this.hash([value]) as bigint;
+		this.stash.db.push(froglinToDeposit);
+		this.stash.smt.add(key, value);
+
+		this.removeFroglin(id);
+	}
+
+	withdrawFromStash(id: bigint) {
+		const toRemoveIndex = this.stash.db.findIndex((f) => f.getId() == id);
+		const froglin = this.stash.db[toRemoveIndex];
+
+		const key = this.hash([
+			this.stash.db[toRemoveIndex].commit(this.secret) as bigint,
+		]);
+		this.stash.smt.delete(key);
+		this.stash.db.splice(toRemoveIndex, 1);
+
+		this.addFroglin(froglin);
+	}
 }

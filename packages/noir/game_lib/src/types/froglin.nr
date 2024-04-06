@@ -86,9 +86,13 @@ fn test_level_up() {
     let mut desert_froglin = desert_froglin::new(0x01); // unique id for the froglin
     let prev = desert_froglin;
     desert_froglin.level_up();
-    println(desert_froglin.serialize());
     assert(prev.level != desert_froglin.level, "Level did not increase!");
     assert(prev.attack != desert_froglin.attack, "Attack did not increase!");
     assert(prev.defense != desert_froglin.defense, "Defense did not increase!");
     assert(prev.health != desert_froglin.health, "Health did not increase!");
+
+    // output for js tests
+    println("#test_level_up_start");
+    println(desert_froglin.serialize());
+    println("#test_level_up_end");
 }
