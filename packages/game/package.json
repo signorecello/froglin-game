@@ -1,0 +1,20 @@
+{
+  "name": "@froglin/game",
+  "packageManager": "yarn@4.1.1",
+  "scripts": {
+    "start": "tsx index.ts",
+    "test": "vitest ${0:-''}"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.1"
+  },
+  "dependencies": {
+    "@froglin/game_lib": "workspace:*",
+    "@noir-lang/backend_barretenberg": "0.26.0-a0f7474.nightly",
+    "@noir-lang/noir_js": "0.26.0-a0f7474.nightly",
+    "@noir-lang/noir_wasm": "0.26.0-a0f7474.nightly",
+    "@signorecello/bb_hashes": "^1.0.10",
+    "@zk-kit/smt": "https://gitpkg.now.sh/signorecello/zk-kit/packages/smt?zpedro/smt_pedersen",
+    "typescript": "^5.4.3"
+  }
+}

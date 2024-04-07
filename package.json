@@ -5,14 +5,14 @@
   "license": "MIT",
   "type": "module",
   "workspaces": [
-    "packages/noir/*",
-    "packages/ts"
+    "packages/*"
   ],
   "scripts": {
     "start": "yarn workspaces foreach -A run start",
     "compile": "yarn workspace @froglin/game_actions compile",
-    "test": "yarn test::lib ${0:-''}",
-    "test::lib": "DRY_RUN=true yarn workspace @froglin/game_lib test::lib ${0:-''}"
+    "test": "yarn test::lib ${0:-''} && yarn test::game ${0:-''}",
+    "test::lib": "yarn workspace @froglin/game_lib test ${0:-''}",
+    "test::game": "yarn workspace @froglin/game test ${0:-''}"
   },
   "packageManager": "yarn@4.1.1",
   "devDependencies": {

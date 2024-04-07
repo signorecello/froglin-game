@@ -352,10 +352,11 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@froglin/game@workspace:*, @froglin/game@workspace:packages/ts":
+"@froglin/game@workspace:packages/game":
   version: 0.0.0-use.local
-  resolution: "@froglin/game@workspace:packages/ts"
+  resolution: "@froglin/game@workspace:packages/game"
   dependencies:
+    "@froglin/game_lib": "workspace:*"
     "@noir-lang/backend_barretenberg": "npm:0.26.0-a0f7474.nightly"
     "@noir-lang/noir_js": "npm:0.26.0-a0f7474.nightly"
     "@noir-lang/noir_wasm": "npm:0.26.0-a0f7474.nightly"
@@ -366,20 +367,10 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@froglin/game_actions@workspace:packages/noir/game":
+"@froglin/game_lib@workspace:*, @froglin/game_lib@workspace:packages/game_lib":
   version: 0.0.0-use.local
-  resolution: "@froglin/game_actions@workspace:packages/noir/game"
+  resolution: "@froglin/game_lib@workspace:packages/game_lib"
   dependencies:
-    "@froglin/game": "workspace:*"
-    typescript: "npm:^5.4.3"
-  languageName: unknown
-  linkType: soft
-
-"@froglin/game_lib@workspace:packages/noir/game_lib":
-  version: 0.0.0-use.local
-  resolution: "@froglin/game_lib@workspace:packages/noir/game_lib"
-  dependencies:
-    "@froglin/game": "workspace:*"
     typescript: "npm:^5.4.3"
   languageName: unknown
   linkType: soft
