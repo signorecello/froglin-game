@@ -1,8 +1,8 @@
 import { Froglin, Player } from "@froglin/game_lib";
 import { NoirInstance } from "./noir";
-import { toCircuitInputHex } from "../../game_lib/src/utils/utils";
-import { CircuitInput } from "../../game_lib/src/types";
-import { ZonesTypesEnum } from "../../game_lib/src/froglin_types/froglin_types";
+import { toCircuitInputHex } from "../../../game_lib/src/utils/utils";
+import { CircuitInput } from "../../../game_lib/src/types";
+import { ZonesTypesEnum } from "../../../game_lib/src/froglin_types/froglin_types";
 
 export class Game {
 	public epoch: bigint = 0n;

@@ -1,7 +1,7 @@
-import { beforeAll, beforeEach, describe, test, it } from "vitest";
-import { Froglin, Player } from "@froglin/game";
+import { beforeEach, describe, test } from "vitest";
+import { Froglin } from "../entities/froglin";
 import { exec } from "child_process";
-import { FroglinTypes, FroglinTypesEnum } from "@froglin/game/froglin_types";
+import { FroglinTypes, FroglinTypesEnum } from "../froglin_types/froglin_types";
 
 const nargoTest = async (testName: string) => {
 	return new Promise<string[]>((resolve) => {

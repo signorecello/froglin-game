@@ -1,10 +1,8 @@
-use crate::traits::{serialize::{Serialize, Commit}, level::{Level, LevelUp}, froglin_inv::FroglinInventory, stash::Stash};
-use crate::globals::{PLAYER_SIZE, ITEM_MAX, FROGLIN_MAX, FROGLIN_SIZE, IDENTITY_SIZE, TREE_DEPTH};
+use crate::traits::{serialization::{Serialization, Commit}, level::{Level, LevelUp}, froglin_inv::FroglinInventory, stash::Stash};
+use crate::globals::{PLAYER_SIZE, ITEM_MAX, FROGLIN_MAX, FROGLIN_SIZE, IDENTITY_SIZE, TREE_DEPTH, ITEM_SIZE};
 use crate::entities::froglin::Froglin;
 use crate::entities::item::Item;
-use crate::froglin_types::desert_froglin;
-use crate::froglin_types::tree_froglin;
-use crate::utils::pretty_print::p_print;
+use crate::froglin_types::{desert_froglin::DesertFroglin, tree_froglin::TreeFroglin};
 use crate::smt::smt::{add, delete};
 
 use dep::std::println;
@@ -20,7 +18,7 @@ struct Player {
 	froglins: [Froglin; FROGLIN_MAX], // max 5 froglins
 }
 
-impl Serialize<PLAYER_SIZE> for Player {
+impl Serialization<PLAYER_SIZE> for Player {
     fn serialize(self) -> [Field; PLAYER_SIZE] {
         let mut stats = [self.mana as Field, self.claimed_mana as Field, self.level, self.stash_root].as_slice();
 
@@ -37,7 +35,40 @@ impl Serialize<PLAYER_SIZE> for Player {
 		};
         ret
     }
+
+    fn deserialize(serialized: [Field; PLAYER_SIZE]) -> Self {
+        let mut inventory = [Item::default(); ITEM_MAX];
+
+        for f in 0..ITEM_MAX {
+            let mut inventory_fields = [0; ITEM_SIZE];
+            for i in 0..ITEM_SIZE {
+                inventory_fields[i] = serialized[4 + f + i];
+            };
+            inventory[f] = Item::deserialize(inventory_fields);
+        };
+        
+
+        let mut froglins = [Froglin::default(); FROGLIN_MAX];
+        // for f in 0..FROGLIN_MAX {
+        //     let mut froglin_fields = [0; FROGLIN_SIZE];
+        //     for i in 0..FROGLIN_SIZE {
+        //         froglin_fields[i] = serialized[4 + ITEM_SIZE * ITEM_MAX + f + i];
+        //     };
+        //     froglins[f] = Froglin::deserialize(froglin_fields);
+        // };
+
+
+        Player {
+            mana: serialized[0] as u32,
+            claimed_mana: serialized[1] as u32,
+            level: serialized[2],
+            stash_root: serialized[3],
+            inventory: inventory,
+			froglins: froglins,
+        }
+    }
 }
+
 
 impl Commit<PLAYER_SIZE> for Player {
     fn commit(self, secret: Field) -> Field {
@@ -207,6 +238,17 @@ impl Player {
 }
 
 #[test]
+fn test_player_serialization() {
+    let player1 = Player::default();
+
+    let serialized_player = player1.serialize();
+    let deserialized_player : Player = Player::deserialize(serialized_player);
+    
+    assert(deserialized_player == player1);
+
+}
+
+#[test]
 fn test_player_equality() {
     let player1 = Player::default();
     let player2 = Player::default();
@@ -292,10 +334,10 @@ fn test_claimed_mana() {
 #[test]
 fn test_add_froglin() {
     let mut player = Player::default();
-    let desert_froglin = desert_froglin::new(0x01); // unique id for the froglin
+    let desert_froglin = DesertFroglin::new(0x01, 0x01); // unique id for the froglin
     player.add_froglin(desert_froglin);
 
-    let tree_froglin = tree_froglin::new(0x02);
+    let tree_froglin = TreeFroglin::new(0x02, 0x01);
     player.add_froglin(tree_froglin);
 
     assert(player.froglins[0].id == 1);
@@ -309,7 +351,7 @@ fn test_add_froglin() {
 #[test]
 fn test_remove_froglin() {
     let mut player = Player::default();
-    let desert_froglin = desert_froglin::new(0x01); // unique id for the froglin
+    let desert_froglin = DesertFroglin::new(0x01, 0x01); // unique id for the froglin
 
     player.add_froglin(desert_froglin);
     assert(player.froglins[0].id == 1);
@@ -330,7 +372,7 @@ fn test_fail_inventory_full() {
     assert(player.stash_root == 0x0);
 
     for i in 1..FROGLIN_MAX + 2 {
-        let desert_froglin = desert_froglin::new(i as Field);
+        let desert_froglin = DesertFroglin::new(i as Field, 0x01);
         player.add_froglin(desert_froglin);
     }
 }
@@ -341,7 +383,7 @@ fn test_calculate_level() {
     let level = player.get_level();
     assert(level == 0);
 
-    let mut desert_froglin = desert_froglin::new(0x01); // unique id for the froglin
+    let mut desert_froglin = DesertFroglin::new(0x01, 0x01); // unique id for the froglin
 
     player.add_froglin(desert_froglin);
     let level = player.get_level();
@@ -361,7 +403,7 @@ fn test_deposit_to_stash() {
     let mut player = Player::default();
     assert(player.stash_root == 0x0);
 
-    let desert_froglin = desert_froglin::new(0x01);
+    let desert_froglin = DesertFroglin::new(0x01, 0x01);
     player.add_froglin(desert_froglin);
     let mut siblings: [Field; TREE_DEPTH] = [0; TREE_DEPTH];
 
@@ -377,7 +419,7 @@ fn test_fail_deposit_to_stash_not_in_inv() {
     let mut player = Player::default();
     assert(player.stash_root == 0x0);
 
-    let desert_froglin = desert_froglin::new(0x01);
+    let desert_froglin = DesertFroglin::new(0x01, 0x01);
     let mut siblings: [Field; TREE_DEPTH] = [0; TREE_DEPTH];
 
     player.stash_deposit(desert_froglin.id, siblings, 0x7b);
@@ -393,7 +435,7 @@ fn test_withdraw_from_stash() {
     println("#test_withdraw_from_stash_start");
 
     // add one froglin to inventory and deposit it to stash
-    let desert_froglin = desert_froglin::new(0x01);
+    let desert_froglin = DesertFroglin::new(0x01, 0x01);
     let mut desert_froglin_siblings: [Field; TREE_DEPTH] = [0; TREE_DEPTH];
     player.add_froglin(desert_froglin);
     player.stash_deposit(desert_froglin.id, desert_froglin_siblings, 0x7b);

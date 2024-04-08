@@ -1,10 +1,17 @@
+use crate::zones_types::Zone;
+use crate::traits::zone_type::ZoneType;
+use crate::globals::ZONES_COUNT;
 
-// id and two coords, let's assume 0.0 is top left and 500.500 is bottom right
-// make sure this one matches zones_drawing lol
+struct Desert {
+	id: Field,
+	coords: [[Field; 2]; ZONES_COUNT],
+}
 
-use crate::zones_types::zone_type::Zone;
-
-#[export]
-pub fn new() -> Zone {
-    Zone { id: 1, coords: [[0, 0], [0, 100], [100, 0], [100, 100]] }
+impl ZoneType for Desert {
+	fn new() -> Zone {
+		Zone {
+			id: 1,
+			coords: [[0, 0], [0, 100], [100, 0], [100, 100]]
+		}
+	}
 }

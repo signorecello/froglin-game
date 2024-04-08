@@ -1,5 +1,4 @@
 mod traits;
-mod utils;
 mod globals;
 mod entities;
 

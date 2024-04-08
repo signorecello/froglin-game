@@ -13,7 +13,7 @@ export class NoirInstance {
 				resolve(
 					join(
 						__dirname,
-						`../../../noir/game/${circuitName}/target/${circuitName}.json`
+						`./circuits/${circuitName}/target/${circuitName}.json`
 					)
 				),
 				"utf-8"
@@ -28,6 +28,11 @@ export class NoirInstance {
 
 	async prove(inputs: InputMap) {
 		const proof = await this.noir.generateProof(inputs);
+		await this.destroy();
 		return proof;
+	}
+
+	async destroy() {
+		await this.noir.destroy();
 	}
 }

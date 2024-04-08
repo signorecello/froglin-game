@@ -1,8 +1,8 @@
 [package]
-name = "capture_froglin"
+name = "stash_deposit"
 type = "bin"
 authors = [""]
 compiler_version = ">=0.25.0"
 
 [dependencies]
-game_lib = { path = "../../game_lib" }
+game_lib = { path = "../../../../game_lib" }

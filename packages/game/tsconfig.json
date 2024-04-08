@@ -1,4 +1,10 @@
 {
-	"extends": "../../tsconfig.json",
-	"includes": ["**/*.ts"]
+	"compilerOptions": {
+		"target": "es2020",
+		"outDir": "artifacts/build",
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"skipLibCheck": true
+	},
+	"include": ["artifacts/*.ts"]
 }

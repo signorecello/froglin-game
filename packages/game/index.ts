@@ -1,1 +1,1 @@
-export { Game } from "./src/game";
+export { Game } from "./src/ts/game";

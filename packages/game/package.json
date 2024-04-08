@@ -3,10 +3,18 @@
   "packageManager": "yarn@4.1.1",
   "scripts": {
     "start": "tsx index.ts",
+    "compile": "${AZTEC_NARGO:-aztec-nargo} compile",
+    "codegen": "${AZTEC_CLI:-aztec-cli} codegen target -o artifacts --ts",
+    "clean": "rm -rf ./dest .tsbuildinfo ./artifacts ./target",
+    "prep": "yarn clean && yarn compile && yarn codegen && tsc -b",
+    "gen-contracts": "sh src/circuits/gen_contracts.sh",
     "test": "vitest ${0:-''}"
   },
   "devDependencies": {
-    "tsx": "^4.7.1"
+    "@aztec/accounts": "^0.32.1",
+    "@aztec/aztec.js": "^0.32.1",
+    "tsx": "^4.7.1",
+    "vitest": "^1.4.0"
   },
   "dependencies": {
     "@froglin/game_lib": "workspace:*",

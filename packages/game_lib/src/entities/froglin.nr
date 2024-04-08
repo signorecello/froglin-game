@@ -1,10 +1,10 @@
-use crate::traits::{serialize::{Serialize, Commit}, level::{Level, LevelUp}};
+use crate::traits::{serialization::{Serialization, Commit}, level::{Level, LevelUp}};
 use crate::globals::{FROGLIN_SIZE, FROGLIN_MAX_AWAKE_AT, FROGLIN_MAX_HABITATS};
-use crate::zones_types::zone_type::Zone;
+use crate::zones_types::Zone;
 use dep::std::println;
 use dep::std::cmp::Eq;
 use dep::std::hash::poseidon2::Poseidon2;
-use crate::froglin_types::desert_froglin;
+use crate::froglin_types::desert_froglin::DesertFroglin;
 
 struct Froglin {
 	id: Field, // unique ID of the froglin
@@ -14,14 +14,24 @@ struct Froglin {
     defense: u32,
 	health: u32,
     level: Field,
-	awake_at: [u32; FROGLIN_MAX_AWAKE_AT], // this can be whatever
-	habitats: [Zone; FROGLIN_MAX_HABITATS], // also can be any number
 }
 
-impl Serialize<FROGLIN_SIZE> for Froglin {
+impl Serialization<FROGLIN_SIZE> for Froglin {
     fn serialize(self) -> [Field; FROGLIN_SIZE] {
         [self.id, self.type_id, self.stealth as Field, self.attack as Field, self.defense as Field, self.health as Field, self.level]
     }
+    fn deserialize(serialized: [Field; FROGLIN_SIZE]) -> Self {
+         Froglin {
+            id: serialized[0],
+            type_id: serialized[1],
+            stealth: serialized[2] as u32,
+            attack: serialized[3] as u32,
+            defense: serialized[4] as u32,
+            health: serialized[5] as u32,
+            level: serialized[6],
+        }
+    }
+
 }
 
 impl Commit<FROGLIN_SIZE> for Froglin {
@@ -47,8 +57,6 @@ impl Default for Froglin {
             defense: 0,
             health: 0,
             level: 0,
-            awake_at: [0, 0, 0, 0],
-            habitats: [Zone::default(), Zone::default(), Zone::default(), Zone::default()],
         }
     }
 }
@@ -75,15 +83,10 @@ impl LevelUp for Froglin {
     }
 }
 
-impl Froglin {
-    fn get_type(self) -> Field {
-        self.type_id
-    }
-}
 
 #[test]
 fn test_level_up() {
-    let mut desert_froglin = desert_froglin::new(0x01); // unique id for the froglin
+    let mut desert_froglin = DesertFroglin::new(0x01, 0x01); // unique id for the froglin
     let prev = desert_froglin;
     desert_froglin.level_up();
     assert(prev.level != desert_froglin.level, "Level did not increase!");

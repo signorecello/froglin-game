@@ -1,23 +1,97 @@
-import { describe, test } from "vitest";
-import { Froglin, Player } from "@froglin/game_lib";
-import { FroglinTypes, FroglinTypesEnum } from "@froglin/game_lib";
-import { Game } from "..";
+import {
+	createPXEClient,
+	PXE,
+	GrumpkinScalar,
+	AccountManager,
+	AccountWallet,
+	AztecAddress,
+	waitForPXE,
+} from "@aztec/aztec.js";
+import { SingleKeyAccountContract } from "@aztec/accounts/single_key";
+import { FroglinUniverseContract } from "../artifacts/FroglinUniverse";
+import { describe, beforeAll, test } from "vitest";
 
-describe("E2E tests", () => {
-	let game = new Game(new Player(123n));
+describe("Account Tests", () => {
+	const pxeURL = process.env.PXE_URL || "http://localhost:8080";
+	let pxe: PXE;
+	let account: AccountManager;
+	let wallets: { [key: string]: AccountWallet | null } = {
+		gameMaster: null,
+		player1: null,
+		player2: null,
+	};
 
-	test("Player adds some mana, captures a froglin, and deposits to stash", async () => {
-		// set up game conditions, let's assume fog is 100
-		game.setFog(100n);
+	const privateKeys = {
+		gameMaster: GrumpkinScalar.random(),
+		player1: GrumpkinScalar.random(),
+		player2: GrumpkinScalar.random(),
+	};
+	let game: FroglinUniverseContract;
 
-		// and player is in the desert zone
-		// coincidentally, at the very same epoch the froglin is awake
-		let froglin1 = new Froglin(FroglinTypesEnum.desert_froglin, 1n);
-		game.setEpoch(froglin1.stats.awake_at[0]);
-		game.setZone(froglin1.stats.habitats[0]);
-
-		// we boost the player's mana, and prove it
-		const requiredMana = game.fog + froglin1.stats.stealth;
-		await game.addMana(requiredMana);
+	beforeAll(async () => {
+		pxe = createPXEClient(pxeURL);
+		waitForPXE(pxe);
+		const accountContract = new SingleKeyAccountContract(
+			privateKeys.gameMaster
+		);
+		account = new AccountManager(
+			pxe,
+			privateKeys.gameMaster,
+			accountContract
+		);
+		wallets.gameMaster = await account.register();
 	});
+
+	test("Can deploy the game", async ({ expect }) => {
+		game = await FroglinUniverseContract.deploy(
+			wallets.gameMaster,
+			wallets.gameMaster.getCompleteAddress()
+		)
+			.send()
+			.deployed();
+		expect(game.methods).toHaveProperty("register");
+	}, 20000);
+
+	test("Can register a player", async ({ expect }) => {
+		const accountContract = new SingleKeyAccountContract(
+			privateKeys.player1
+		);
+		const player = new AccountManager(
+			pxe,
+			privateKeys.player1,
+			accountContract
+		);
+		wallets.player1 = await player.register();
+
+		const registerReceipt = await game
+			.withWallet(wallets.player1)
+			.methods.register(wallets.player1.getCompleteAddress(), 1)
+			.send()
+			.wait();
+		expect(registerReceipt.status).toBe("mined");
+	}, 20000);
+
+	// test("Can register a second player", async ({ expect }) => {
+	// 	const accountContract = new SingleKeyAccountContract(
+	// 		privateKeys.player2
+	// 	);
+	// 	const player = new AccountManager(
+	// 		pxe,
+	// 		privateKeys.player2,
+	// 		accountContract
+	// 	);
+	// 	wallets.player2 = await player.register();
+
+	// 	const registerReceipt = await game
+	// 		.withWallet(wallets.player2)
+	// 		.methods.register(wallets.player2.getCompleteAddress(), 1)
+	// 		.send()
+	// 		.wait();
+	// 	expect(registerReceipt.status).toBe("mined");
+	// }, 20000);
+
+	// test("Game master can pair two players", async ({ expect }) => {
+	// 	const pairReceipt = await game.methods.pair().send().wait();
+	// 	expect(pairReceipt.status).toBe("mined");
+	// }, 20000);
 });

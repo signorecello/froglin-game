@@ -1,7 +1,6 @@
-use dep::game_lib::types::player::Player;
+use dep::game_lib::entities::player::Player;
 use dep::game_lib::zones_types::{zone_type::Zone, desert};
-use dep::game_lib::froglin_types::{get_froglin_type_by_id, desert_froglin};
-use dep::game_lib::utils::pretty_print::p_print;
+use dep::game_lib::froglin_types::{desert_froglin};
 use dep::std::field::bn254::gt;
 
 // player wants to prove he knows all the stats about the private input Player
@@ -16,8 +15,7 @@ fn main(
     player: Player,
     secret: Field,
     current_zone: [Field; 2],
-    froglin_id: pub Field, // unique id of the froglin, provided by the SC
-    froglin_type_id: pub Field, // a froglin in the wild has always the same stats, for now. TODO would be cool to have different levels and etc
+    caught_froglin: pub Froglin, // unique id of the froglin, provided by the SC
     old_identity: pub Field, // provided by the SC
     current_fog_level: pub u32, // provided by the SC
     current_epoch: pub u32 // provided by the SC
@@ -25,7 +23,6 @@ fn main(
     // check that the player is valid
     player.assert_identity(secret, old_identity);
     let mut updated_player = player;
-    let caught_froglin = get_froglin_type_by_id(froglin_id, froglin_type_id);
 
     // check that the player has enough mana to catch the froglin
     let required_mana = caught_froglin.stealth + current_fog_level;

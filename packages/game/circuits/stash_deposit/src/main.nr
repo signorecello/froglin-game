@@ -1,4 +1,4 @@
-use dep::game_lib::types::{player::Player, froglin::Froglin};
+use dep::game_lib::entities::{player::Player, froglin::Froglin};
 use dep::game_lib::smt::smt::{add, verify};
 use dep::game_lib::globals::{FROGLIN_SIZE, TREE_DEPTH};
 use dep::game_lib::froglin_types::desert_froglin;

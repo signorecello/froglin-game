@@ -1,8 +1,7 @@
 use dep::std::option::Option;
+use crate::globals::TREE_DEPTH;
 
 mod utils;
-
-global TREE_DEPTH: u32 = 256;
 
 /**
  * Verifies a membership or a non-membership proof, ie it calculates the tree root

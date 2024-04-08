@@ -1,4 +1,4 @@
-use crate::traits::serialize::Serialize;
+use crate::traits::serialization::Serialization;
 use crate::globals::{ITEM_SIZE};
 use dep::std::println;
 
@@ -7,10 +7,17 @@ struct Item {
     quantity: Field
 }
 
-impl Serialize<ITEM_SIZE> for Item {
+impl Serialization<ITEM_SIZE> for Item {
     fn serialize(self) -> [Field; ITEM_SIZE] {
         [self.id, self.quantity]
 	}
+
+    fn deserialize(serialized: [Field; ITEM_SIZE]) -> Self {
+        Item {
+            id: serialized[0],
+            quantity: serialized[1]
+        }
+    }
 }
 
 impl Default for Item {

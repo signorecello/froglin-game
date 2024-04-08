@@ -1,4 +1,4 @@
-use dep::game_lib::types::player::Player;
+use dep::game_lib::entities::player::Player;
 
 // player wants to prove he knows all the stats about the private input Player
 // by providing a private input secret, serializizing and hashing it
