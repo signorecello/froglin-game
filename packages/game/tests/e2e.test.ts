@@ -94,7 +94,9 @@ describe("Account Tests", () => {
 			.withWallet(wallets.player1)
 			.methods.view_player(wallets.player1.getCompleteAddress())
 			.view();
-		const player = Player.import(player_read);
+
+		const player = Player.import(1n, player_read);
+		console.log(player);
 		expect(player.mana).toBe(100n);
 	}, 20000);
 

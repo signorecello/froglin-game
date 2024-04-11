@@ -28,8 +28,22 @@ export class Player {
 		this.stash = { smt: smt, db: [], root: smt.root as bigint };
 	}
 
-	static import(serialized: bigint[]) {
-		return new Player(serialized[serialized.length - 1]);
+	static import(secret: bigint, serialized: bigint[]) {
+		const [mana, level, stashRoot, ...rest] = serialized;
+
+		const inventory = [];
+		for (let i = 0; i < ITEM_MAX; i++) {
+			inventory.push(Item.import(rest.slice(i * 2, i * 2 + 2)));
+		}
+
+		const froglins = [];
+		for (let i = 0; i < FROGLIN_MAX; i++) {
+			froglins.push(
+				Froglin.import(rest.slice(ITEM_MAX).slice(i * 7, i * 7 + 7))
+			);
+		}
+
+		return new Player(secret, mana, level, stashRoot, inventory, froglins);
 	}
 
 	serialize() {
