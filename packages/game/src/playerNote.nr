@@ -9,8 +9,9 @@ use dep::aztec::{
 
 use dep::game_lib::entities::player::Player;
 use dep::game_lib::globals::PLAYER_SIZE;
+use dep::aztec::oracle::debug_log::{debug_log, debug_log_format, debug_log_field};
 
-global PLAYER_NOTE_LENGTH = PLAYER_SIZE + 2;
+global PLAYER_NOTE_LENGTH = PLAYER_SIZE + 3;
 
 
 #[aztec(note)]
@@ -69,9 +70,14 @@ impl NoteInterface<PLAYER_NOTE_LENGTH> for PlayerNote {
 
     fn deserialize_content(serialized_note: [Field; PLAYER_NOTE_LENGTH]) -> Self {
         let mut p_notes = [0; PLAYER_SIZE];
-        for i in 0..PLAYER_NOTE_LENGTH {
+        debug_log_field(PLAYER_SIZE as Field);
+        for i in 0..PLAYER_SIZE {
             p_notes[i] = serialized_note[i];
         }
+        debug_log_field(PLAYER_SIZE as Field);
+        debug_log_field(serialized_note[PLAYER_SIZE] as Field);
+        debug_log_field(serialized_note[PLAYER_SIZE + 1] as Field);
+        debug_log_field(serialized_note[PLAYER_SIZE + 2] as Field);
 
         PlayerNote {
             player: Player::deserialize(p_notes),

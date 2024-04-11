@@ -1,4 +1,4 @@
-use crate::traits::{serialization::{Serialization, Commit}, level::{Level, LevelUp}};
+use crate::traits::{serialization::{Serialization, Commit}, level::{LevelUp}};
 use crate::globals::{FROGLIN_SIZE, FROGLIN_MAX_AWAKE_AT, FROGLIN_MAX_HABITATS};
 use crate::zones_types::Zone;
 use dep::std::println;
@@ -68,11 +68,6 @@ impl Eq for Froglin {
     }
 }
 
-impl Level for Froglin {
-    fn get_level(self) -> Field {
-        self.level
-    }
-}
 
 impl LevelUp for Froglin {
     fn level_up(&mut self) {

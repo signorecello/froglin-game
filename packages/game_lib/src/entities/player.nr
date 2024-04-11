@@ -1,4 +1,7 @@
-use crate::traits::{serialization::{Serialization, Commit}, level::{Level, LevelUp}, froglin_inv::FroglinInventory, stash::Stash};
+use crate::traits::{
+    serialization::{Serialization, Commit}, froglin_inv::FroglinInventory,
+    stash::Stash
+};
 use crate::globals::{PLAYER_SIZE, ITEM_MAX, FROGLIN_MAX, FROGLIN_SIZE, IDENTITY_SIZE, TREE_DEPTH, ITEM_SIZE};
 use crate::entities::froglin::Froglin;
 use crate::entities::item::Item;
@@ -11,7 +14,6 @@ use dep::std::ec::consts::te::baby_jubjub;
 
 struct Player {
 	mana: u32,
-    claimed_mana: u32,
 	level: Field,
 	stash_root: Field, // merkle tree root of the user's stash
 	inventory: [Item; ITEM_MAX], // max 5 items
@@ -20,7 +22,7 @@ struct Player {
 
 impl Serialization<PLAYER_SIZE> for Player {
     fn serialize(self) -> [Field; PLAYER_SIZE] {
-        let mut stats = [self.mana as Field, self.claimed_mana as Field, self.level, self.stash_root].as_slice();
+        let mut stats = [self.mana as Field, self.level, self.stash_root].as_slice();
 
         for i in 0..ITEM_MAX {
             stats = stats.append(self.inventory[i].serialize().as_slice());
@@ -60,15 +62,13 @@ impl Serialization<PLAYER_SIZE> for Player {
 
         Player {
             mana: serialized[0] as u32,
-            claimed_mana: serialized[1] as u32,
-            level: serialized[2],
-            stash_root: serialized[3],
+            level: serialized[1],
+            stash_root: serialized[2],
             inventory: inventory,
 			froglins: froglins,
         }
     }
 }
-
 
 impl Commit<PLAYER_SIZE> for Player {
     fn commit(self, secret: Field) -> Field {
@@ -89,7 +89,6 @@ impl Default for Player {
 	fn default() -> Self {
 		Player {
 			mana: 0,
-            claimed_mana: 0,
 			level: 0,
 			stash_root: 0x0,
 			inventory: [Item::default(); ITEM_MAX],
@@ -101,17 +100,10 @@ impl Default for Player {
 impl Eq for Player {
     fn eq(self, other: Self) -> bool {
         (self.mana == other.mana) &
-        (self.claimed_mana == other.claimed_mana) &
         (self.level == other.level) &
 		(self.stash_root == other.stash_root) &
 		(self.inventory == other.inventory) &
 		(self.froglins == other.froglins)
-    }
-}
-
-impl Level for Player {
-    fn get_level(self) -> Field {
-        self.level
     }
 }
 
@@ -211,10 +203,8 @@ impl Player {
         }
     }
 
-    fn add_mana(&mut self, total_mana: u32) {
-        let unclaimed_mana = total_mana - self.claimed_mana;
-        self.mana += unclaimed_mana;
-        self.claimed_mana = total_mana;
+    fn add_mana(&mut self, amount: u32) {
+        self.mana += amount;
     }
 
     fn remove_mana(&mut self, amount: u32) {
@@ -243,9 +233,8 @@ fn test_player_serialization() {
 
     let serialized_player = player1.serialize();
     let deserialized_player : Player = Player::deserialize(serialized_player);
-    
-    assert(deserialized_player == player1);
 
+    assert(deserialized_player == player1);
 }
 
 #[test]
@@ -288,13 +277,11 @@ fn test_add_mana() {
     player.add_mana(10); // user is entitled to 10 mana
     assert(player.mana == 10);
     player.add_mana(100); // user is entitled to 100 mana
-    assert(player.claimed_mana == 100); // he claimed all 100 mana
-    assert(player.mana == 100); // he didn't use any mana
+    assert(player.mana == 110); // he didn't use any mana
 
     // output for js tests
     println("#test_add_mana_start");
     println(player.mana);
-    println(player.claimed_mana);
     println("#test_add_mana_end");
 }
 
@@ -310,25 +297,6 @@ fn test_remove_mana() {
     println("#test_remove_mana_start");
     println(player.mana);
     println("#test_remove_mana_end");
-}
-
-#[test]
-fn test_claimed_mana() {
-    let mut player = Player::default();
-    player.add_mana(10); // user is entitled to 10 mana
-    assert(player.mana == 10);
-    player.add_mana(100); // user is entitled to 100 mana
-    assert(player.claimed_mana == 100); // he claimed all 100 mana
-
-    player.remove_mana(10); // user used 10 mana
-    assert(player.claimed_mana == 100); // he still claimed all 100 mana
-    assert(player.mana == 90); // but used 10
-
-    // output for js tests
-    println("#test_claimed_mana_start");
-    println(player.mana);
-    println(player.claimed_mana);
-    println("#test_claimed_mana_end");
 }
 
 #[test]
@@ -380,21 +348,21 @@ fn test_fail_inventory_full() {
 #[test]
 fn test_calculate_level() {
     let mut player = Player::default();
-    let level = player.get_level();
+    let level = player.level;
     assert(level == 0);
 
     let mut desert_froglin = DesertFroglin::new(0x01, 0x01); // unique id for the froglin
 
     player.add_froglin(desert_froglin);
-    let level = player.get_level();
+    let level = player.level;
     assert(level == 0);
 
     player.level_up(desert_froglin);
-    let level = player.get_level();
+    let level = player.level;
     assert(level == 1);
 
     player.level_up(desert_froglin);
-    let level = player.get_level();
+    let level = player.level;
     assert(level == 2);
 }
 

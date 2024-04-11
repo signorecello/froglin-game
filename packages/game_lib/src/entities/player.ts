@@ -14,7 +14,6 @@ export class Player {
 	constructor(
 		public secret: bigint,
 		public mana = 0n,
-		public claimedMana = 0n,
 		public level = 0n,
 		public stashRoot = 0n,
 		public inventory = Array(ITEM_MAX).fill(new Item()),
@@ -29,10 +28,13 @@ export class Player {
 		this.stash = { smt: smt, db: [], root: smt.root as bigint };
 	}
 
+	static import(serialized: bigint[]) {
+		return new Player(serialized[serialized.length - 1]);
+	}
+
 	serialize() {
 		const serialized = [
 			this.mana,
-			this.claimedMana,
 			this.level,
 			this.stashRoot,
 			...this.inventory.map((i) => i.serialize()).flat(),
@@ -51,7 +53,6 @@ export class Player {
 	toCircuitInput(): CircuitInput {
 		let circuitInput = toCircuitInputHex({
 			mana: this.mana,
-			claimed_mana: this.claimedMana,
 			level: this.level,
 			stash_root: this.stashRoot,
 		}) as CircuitInput;
@@ -79,10 +80,8 @@ export class Player {
 		return { commitment, identity };
 	}
 
-	addMana(totalMana: bigint) {
-		const unclaimedMana = totalMana - this.claimedMana;
-		this.mana += unclaimedMana;
-		this.claimedMana = totalMana;
+	addMana(amount: bigint) {
+		this.mana += amount;
 	}
 
 	removeMana(amount: bigint) {

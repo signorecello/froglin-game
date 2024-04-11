@@ -10,6 +10,7 @@ import {
 import { SingleKeyAccountContract } from "@aztec/accounts/single_key";
 import { FroglinUniverseContract } from "../artifacts/FroglinUniverse";
 import { describe, beforeAll, test } from "vitest";
+import { Player } from "@froglin/game_lib";
 
 describe("Account Tests", () => {
 	const pxeURL = process.env.PXE_URL || "http://localhost:8080";
@@ -49,7 +50,17 @@ describe("Account Tests", () => {
 		)
 			.send()
 			.deployed();
+		console.log(game.address);
 		expect(game.methods).toHaveProperty("register");
+	}, 20000);
+
+	test("Can advance the epoch", async ({ expect }) => {
+		const epochReceipt = await game
+			.withWallet(wallets.gameMaster)
+			.methods.advance_epoch()
+			.send()
+			.wait();
+		expect(epochReceipt.status).toBe("mined");
 	}, 20000);
 
 	test("Can register a player", async ({ expect }) => {
@@ -69,6 +80,22 @@ describe("Account Tests", () => {
 			.send()
 			.wait();
 		expect(registerReceipt.status).toBe("mined");
+	}, 20000);
+
+	test("Can boost player's mana", async ({ expect }) => {
+		const boostReceipt = await game
+			.withWallet(wallets.player1)
+			.methods.mana_boost(100)
+			.send()
+			.wait();
+		expect(boostReceipt.status).toBe("mined");
+
+		const player_read = await game
+			.withWallet(wallets.player1)
+			.methods.view_player(wallets.player1.getCompleteAddress())
+			.view();
+		const player = Player.import(player_read);
+		expect(player.mana).toBe(100n);
 	}, 20000);
 
 	// test("Can register a second player", async ({ expect }) => {

@@ -87,19 +87,17 @@ describe("Player Mana", () => {
 		let player1 = new Player(123n);
 
 		test("Typescript", async ({ expect }) => {
-			await player1.addMana(10n);
+			player1.addMana(10n);
 			expect(player1.mana).toEqual(10n);
-			await player1.addMana(100n);
-			expect(player1.claimedMana).toEqual(100n);
-			expect(player1.mana).toEqual(100n);
+			player1.addMana(100n);
+			expect(player1.mana).toEqual(110n);
 		}, 120000);
 
 		test("Noir", async ({ expect, skip }) => {
 			if (process.env.SKIP_NOIR_TESTS) skip();
 
-			const [mana, claimedMana] = await nargoTest(testName);
+			const [mana] = await nargoTest(testName);
 			expect(player1.mana).toEqual(BigInt(mana));
-			expect(player1.claimedMana).toEqual(BigInt(claimedMana));
 		});
 	});
 
@@ -112,7 +110,7 @@ describe("Player Mana", () => {
 		});
 
 		test("Typescript", async ({ expect }) => {
-			await player1.addMana(100n);
+			player1.addMana(100n);
 			expect(player1.mana).toEqual(100n);
 			player1.removeMana(10n);
 			expect(player1.mana).toEqual(90n);
@@ -135,9 +133,9 @@ describe("Player Mana", () => {
 		});
 
 		test("Typescript", async ({ expect }) => {
-			await player1.addMana(10n);
+			player1.addMana(10n);
 			expect(player1.mana).toEqual(10n);
-			await player1.addMana(100n);
+			player1.addMana(100n);
 			expect(player1.claimedMana).toEqual(100n);
 
 			player1.removeMana(10n);

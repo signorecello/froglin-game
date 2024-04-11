@@ -34,6 +34,22 @@ export class Froglin {
 		return [id, type_id, stealth, attack, defense, health, level];
 	}
 
+	import(serialized: bigint[]) {
+		this.stats = {
+			id: serialized[0],
+			type_id: serialized[1],
+			stealth: serialized[2],
+			attack: serialized[3],
+			defense: serialized[4],
+			health: serialized[5],
+			level: serialized[6],
+			awake_at: serialized.slice(7, 11),
+			habitats: serialized
+				.slice(11)
+				.map((h) => ZonesTypesEnum[h.toString(10)]),
+		};
+	}
+
 	commit(secret: bigint) {
 		let stats = this.serialize();
 		stats.push(secret);

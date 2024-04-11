@@ -7,6 +7,11 @@ export class Item {
 		return [this.id, this.quantity];
 	}
 
+	import(serialized: bigint[]) {
+		this.id = serialized[0];
+		this.quantity = serialized[1];
+	}
+
 	toCircuitInput() {
 		return {
 			id: toCircuitInputHex(this.id),
