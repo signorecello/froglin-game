@@ -11,8 +11,8 @@
     "test": "vitest ${0:-''}"
   },
   "devDependencies": {
-    "@aztec/accounts": "^0.32.1",
-    "@aztec/aztec.js": "^0.32.1",
+    "@aztec/accounts": "latest",
+    "@aztec/aztec.js": "latest",
     "tsx": "^4.7.1",
     "vitest": "^1.4.0"
   },

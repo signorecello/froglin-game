@@ -12,6 +12,8 @@ import {
   ContractFunctionInteraction,
   ContractInstanceWithAddress,
   ContractMethod,
+  ContractStorageLayout,
+  ContractNotes,
   DeployMethod,
   EthAddress,
   EthAddressLike,
@@ -97,25 +99,67 @@ export class FroglinUniverseContract extends ContractBase {
   }
   
 
+  
+    public static get storage(): ContractStorageLayout<'game_master' | 'epoch' | 'fog' | 'players'> {
+      return {
+        game_master: {
+          slot: new Fr(1n),
+          typ: "SharedImmutable<AztecAddress>",
+        }
+      ,
+epoch: {
+          slot: new Fr(2n),
+          typ: "PublicMutable<Epoch>",
+        }
+      ,
+fog: {
+          slot: new Fr(4n),
+          typ: "PublicMutable<Field>",
+        }
+      ,
+players: {
+          slot: new Fr(5n),
+          typ: "Map<AztecAddress, PrivateMutable<PlayerNote>>",
+        }
+      
+      } as ContractStorageLayout<'game_master' | 'epoch' | 'fog' | 'players'>;
+    }
+    
+
+  
+  public static get notes(): ContractNotes<'PlayerNote'> {
+    const notes = this.artifact.outputs.globals.notes ? (this.artifact.outputs.globals.notes as any) : [];
+    return {
+      PlayerNote: {
+        id: new Fr(679711410078111116101n),
+      }
+    
+    } as ContractNotes<'PlayerNote'>;
+  }
+  
+
   /** Type-safe wrappers for the public methods exposed by the contract. */
   public methods!: {
     
     /** advance_epoch() */
     advance_epoch: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
+    /** mana_boost(amount: field) */
+    mana_boost: ((amount: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
     /** view_player(owner: struct) */
     view_player: ((owner: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
-    /** mana_boost(amount: integer) */
-    mana_boost: ((amount: (bigint | number)) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+    /** view_game() */
+    view_game: (() => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
+
+    /** constructor(gm: struct) */
+    constructor: ((gm: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** register(owner: struct, secret: field) */
     register: ((owner: AztecAddressLike, secret: FieldLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
 
     /** compute_note_hash_and_nullifier(contract_address: struct, nonce: field, storage_slot: field, note_type_id: field, serialized_note: array) */
     compute_note_hash_and_nullifier: ((contract_address: AztecAddressLike, nonce: FieldLike, storage_slot: FieldLike, note_type_id: FieldLike, serialized_note: FieldLike[]) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
-
-    /** init(gm: struct) */
-    init: ((gm: AztecAddressLike) => ContractFunctionInteraction) & Pick<ContractMethod, 'selector'>;
   };
 }

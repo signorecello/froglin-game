@@ -3,22 +3,21 @@ use dep::aztec::prelude::{AztecAddress, NoteHeader, NoteInterface, PrivateContex
 use dep::aztec::{
     context::Context,
     oracle::{unsafe_rand::unsafe_rand, nullifier_key::get_nullifier_secret_key, get_public_key::get_public_key},
-    note::{utils::compute_note_hash_for_consumption},
-    hash::pedersen_hash
+    note::{utils::compute_note_hash_for_consumption}, hash::pedersen_hash
 };
 
 use dep::game_lib::entities::player::Player;
 use dep::game_lib::globals::PLAYER_SIZE;
 use dep::aztec::oracle::debug_log::{debug_log, debug_log_format, debug_log_field};
 
-global PLAYER_NOTE_LENGTH = PLAYER_SIZE + 3;
-
+global PLAYER_NOTE_LENGTH = PLAYER_SIZE + 4;
 
 #[aztec(note)]
 struct PlayerNote {
     player: Player,
     owner: AztecAddress,
     secret: Field,
+    last_claimed_epoch: Field,
     randomness: Field,
     header: NoteHeader,
 }
@@ -27,8 +26,9 @@ impl PlayerNote {
     pub fn new(owner: AztecAddress, secret: Field) -> Self {
         let player = Player::default();
         let randomness = unsafe_rand();
+        let last_claimed_epoch = 0;
         let header = NoteHeader::empty();
-        PlayerNote { player, owner, secret, randomness, header }
+        PlayerNote { player, owner, secret, last_claimed_epoch, randomness, header }
     }
 }
 
@@ -64,7 +64,8 @@ impl NoteInterface<PLAYER_NOTE_LENGTH> for PlayerNote {
 
         p[PLAYER_SIZE] = self.owner.to_field();
         p[PLAYER_SIZE + 1] = self.secret;
-        p[PLAYER_SIZE + 2] = self.randomness;
+        p[PLAYER_SIZE + 2] = self.last_claimed_epoch;
+        p[PLAYER_SIZE + 3] = self.randomness;
         p
     }
 
@@ -83,7 +84,8 @@ impl NoteInterface<PLAYER_NOTE_LENGTH> for PlayerNote {
             player: Player::deserialize(p_notes),
             owner: AztecAddress::from_field(serialized_note[PLAYER_SIZE]),
             secret: serialized_note[PLAYER_SIZE + 1],
-            randomness: serialized_note[PLAYER_SIZE + 2],
+            last_claimed_epoch: serialized_note[PLAYER_SIZE + 2],
+            randomness: serialized_note[PLAYER_SIZE + 3],
             header: NoteHeader::empty(),
         }
     }
